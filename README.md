@@ -13,7 +13,7 @@ Model Predictive Control (MPC) policies. It is built on top of
 
 leap-c requires the following dependencies that need to be installed separately:
 
-- [casadi](https://web.casadi.org/) for symbolic computations
+- [CasADi](https://web.casadi.org/) for symbolic computations
 - [acados](https://docs.acados.org/index.html) for generating OCP solvers
 
 ### Clone with recursive submodules
@@ -38,7 +38,10 @@ Create a python virtual environment using python version 3.11 and activate it:
 Follow the instructions to build acados [here](https://docs.acados.org/installation/),
 and also follow the instructions there to install acados' python interface.
 
-Install the required casadi version with the installation script:
+When running the
+`cmake` command, make sure to include the options `-DACADOS_WITH_OPENMP=ON`, `-DACADOS_PYTHON=ON` and `-DACADOS_NUM_THREADS=1`.
+
+Install the required CasADi version with the installation script:
 
 ``` bash
     cd <PATH_TO_LEAP_C_DIRECTORY>

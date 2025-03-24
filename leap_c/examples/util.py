@@ -3,13 +3,12 @@ import numpy as np
 from acados_template import AcadosModel, AcadosOcp
 from casadi.tools import entry, struct_symSX
 
-
 def find_param_in_p_or_p_global(
     param_name: list[str], model: AcadosModel
 ) -> dict[str, ca.SX]:
     if model.p == []:
         return {key: model.p_global[key] for key in param_name}  # type:ignore
-    elif model.p_global is None:
+    elif model.p_global is None or model.p_global == []:
         return {key: model.p[key] for key in param_name}  # type:ignore
     else:
         return {

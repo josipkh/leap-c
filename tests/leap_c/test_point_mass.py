@@ -57,11 +57,11 @@ def run_closed_loop(
 
 if __name__ == "__main__":
     trainer = create_trainer(
-        name="sac_fou",
+        name="sac_fop",
         task=create_task("point_mass"),
         output_path="output/videos",
         device="cpu",
-        cfg=create_default_cfg("sac_fou"),
+        cfg=create_default_cfg("sac_fop"),
     )
 
     trainer.validate()

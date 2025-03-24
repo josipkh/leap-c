@@ -4,6 +4,7 @@ import datetime
 from argparse import ArgumentParser
 from dataclasses import asdict
 from pathlib import Path
+import shutil
 
 import leap_c.examples  # noqa: F401
 import leap_c.rl  # noqa: F401
@@ -63,7 +64,8 @@ def main(
         device: Device to run on.
     """
     if output_path.exists():
-        raise ValueError(f"Output path {output_path} already exists")
+        shutil.rmtree(output_path)
+        # raise ValueError(f"Output path {output_path} already exists")
 
     task = create_task(task_name)
 
