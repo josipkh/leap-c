@@ -129,6 +129,7 @@ class VehicleSteeringEnv(gym.Env):
     # TODO: remove unnecessary inputs
     def __init__(
         self,
+        render_mode: str | None = None,
         dt: float = 0.05,
         max_time: float = 10.0,  # TODO: check max_time value
         vehicle_params: VehicleParams = VehicleParams(),
@@ -165,6 +166,10 @@ class VehicleSteeringEnv(gym.Env):
         self.reference_type = reference_type
         self.X = 0  # for tracking the global position of the vehicle
         self.vx = vehicle_params.vx
+
+        # For rendering
+        if render_mode is not None:
+            raise NotImplementedError("Rendering is not implemented yet.")
 
     def step(self, action: np.ndarray) -> tuple[Any, float, bool, bool, dict]:
         self.action_to_take = action
@@ -208,10 +213,13 @@ class VehicleSteeringEnv(gym.Env):
     def reset(
         self, *, seed: int | None = None, options: dict | None = None
     ) -> tuple[Any, dict]:  # type: ignore
-        self._np_random = np.random.RandomState(seed)
+        if seed is not None:
+            super().reset(seed=seed)
+            self.observation_space.seed(seed)
+            self.action_space.seed(seed)
         self.state_trajectory = None
         self.action_to_take = None
-        self.state = np.random.uniform(
+        self.state = self.np_random.uniform(
             low=self.init_state_dist["low"], high=self.init_state_dist["high"]
         )
         self.time = 0.0
@@ -256,11 +264,15 @@ class VehicleSteeringEnv(gym.Env):
 
         return done
     
+    def render(self):
+        print("rendering not implemented")
+        return np.random.rand(40,40,3)
+    
 
 if __name__ == '__main__':
     # environment setup
     env = VehicleSteeringEnv(reference_type="double_lane_change")
-    s, _ = env.reset(seed=0)
+    s, _ = env.reset(seed=123)
 
     # controller setup
     A, B = get_continuous_system()

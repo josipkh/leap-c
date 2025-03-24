@@ -1,4 +1,5 @@
 import numpy as np
+import casadi as ca
 from dataclasses import fields, is_dataclass
 from scipy.linalg import solve_continuous_are as _solve_continuous_are
 # from scipy.linalg import solve_discrete_are as _solve_discrete_are
@@ -36,6 +37,10 @@ def cont2discrete_symbolic(A: ca.SX, B: ca.SX, dt: float, method: str) -> tuple[
         # Compute the discretized A and B using the Tustin (Bilinear) method
         A_d = ca.mtimes(ca.inv(I + (A * dt / 2)), I - (A * dt / 2))
         B_d = ca.mtimes(ca.inv(I + (A * dt / 2)), B * dt)
+    elif method == "euler":
+        I = ca.SX.eye(A.shape[0])
+        A_d = I + A * dt
+        B_d = B * dt
     else:
         raise NotImplementedError(f"Discretization method {method} not implemented")
     return A_d, B_d
@@ -199,41 +204,21 @@ def get_double_lane_change_data(X: np.ndarray) -> tuple[np.ndarray, np.ndarray, 
     return curvature, Y, psi
 
 
-# def state_log_f2c(
-#         state_log: np.ndarray,
-#         reference_type: str = "double_lane_change",
-#         ts: float = 0.05
-#     ) -> np.ndarray:
-#     """
-#     Convert the state log from the Frenet CF to Cartesian CF
-#     :param state_log: array of shape (n, m) where n is the number of states and m is the number of time steps
-#     :return: array of shape (n, m)
-#     """
-#     raise NotImplementedError("This function is not implemented yet")
-
-
 if __name__ == "__main__":
-    vx = 60 / 3.6
-    ts = 0.05
-    # X = vx * np.arange(0, 10, ts)
     X = np.linspace(0,120,1000)
-
     curvature, Y, psi = get_double_lane_change_data(X)
-    print(f'max: {np.max(curvature)}')  # should be around +0.006797
-    print(f'min: {np.min(curvature)}')  # should be around -0.003533
 
     import matplotlib.pyplot as plt
 
-    plt.figure(1)
-    plt.plot(curvature)
-    plt.xlabel('k')
-    plt.ylabel('curvature [1/m]')
-
-    # compare with Fig. 5 in https://www.inderscienceonline.com/doi/abs/10.1504/IJVAS.2005.008237
-    plt.figure(2)
-    plt.plot(X,Y)
-    plt.xlabel('x [m]')
-    plt.ylabel('y [m]')
+    fig_traj, axs = plt.subplots(3, 1, constrained_layout=True, sharex=True)
+    axs[0].plot(X,curvature)
+    axs[1].plot(X,Y)  # compare with Fig. 5 in https://www.inderscienceonline.com/doi/abs/10.1504/IJVAS.2005.008237
+    axs[2].plot(X,np.rad2deg(psi))
+    axs[0].set_ylabel("road curvature [1/m]")
+    axs[1].set_ylabel("Y [m]")
+    axs[2].set_ylabel("yaw angle [deg]")
+    axs[2].set_xlabel("X [m]")
+    axs[0].set_title("double lane change")
 
     plt.show(block=False)
     print("Press ENTER to close the plot")

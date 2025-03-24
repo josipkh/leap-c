@@ -15,7 +15,7 @@ args = parser.parse_args()
 
 
 cfg = SacFopBaseConfig()
-cfg.val.interval = 100
+cfg.val.interval = 500
 cfg.train.steps = 1_000
 cfg.val.num_render_rollouts = 1
 cfg.log.wandb_logger = False
