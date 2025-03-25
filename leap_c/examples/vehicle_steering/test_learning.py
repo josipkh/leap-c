@@ -1,5 +1,3 @@
-"""Main script to run experiments."""
-
 from argparse import ArgumentParser
 from pathlib import Path
 

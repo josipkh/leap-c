@@ -7,6 +7,7 @@ from leap_c.examples.vehicle_steering.utils import get_double_lane_change_data, 
 MAX_FINAL_DIST = 0.1    # maximum tolerated error
 MAX_FINAL_VEL = 0.1     # maximum tolerated error derivative
 
+
 def run_closed_loop(
     mpc: VehicleSteeringMPC,
     env: VehicleSteeringEnv,

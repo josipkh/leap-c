@@ -64,8 +64,15 @@ def main(
         device: Device to run on.
     """
     if output_path.exists():
-        shutil.rmtree(output_path)
-        # raise ValueError(f"Output path {output_path} already exists")
+        print(f"Output path {output_path} already exists")
+        print("Rewrite the previous output? [y]/n")
+        reply = input()
+        if not reply or reply == "y":
+            shutil.rmtree(output_path)
+        elif reply == "n":
+            raise ValueError(f"Output path {output_path} already exists")
+        else:
+            raise ValueError('Unknown reply')
 
     task = create_task(task_name)
 
