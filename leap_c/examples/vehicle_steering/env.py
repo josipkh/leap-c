@@ -2,7 +2,7 @@
 This module contains the environment for the vehicle steering problem.
 The system model is based on section 2.5 (eq. 2.45) in "Rajamani - Vehicle Dynamics and Control".
 States are the lateral and heading errors and their derivatives (x = [ey ey_dot epsi epsi_dot]).
-The action is the steering angle (u = delta).
+The action is the (wheel) steering angle (u = delta).
 The reference yaw rate is modelled as an additional control input (will be fixed at runtime).
 """
 
@@ -10,12 +10,16 @@ import numpy as np
 import gymnasium as gym
 import casadi as ca
 from scipy.signal import cont2discrete
+from scipy.integrate import solve_ivp
 from dataclasses import dataclass
 from typing import Any
 import matplotlib.pyplot as plt
-from leap_c.examples.vehicle_steering.utils import contains_symbolics, cont2discrete_symbolic, lqr
-from scipy.integrate import solve_ivp
-from leap_c.examples.vehicle_steering.utils import get_double_lane_change_data
+from leap_c.examples.vehicle_steering.utils import (
+    contains_symbolics,
+    cont2discrete_symbolic,
+    lqr,
+    get_double_lane_change_data
+)
 
 
 @dataclass(kw_only=True)
@@ -153,8 +157,8 @@ class VehicleSteeringEnv(gym.Env):
         self.init_state_dist = init_state_dist
         self.observation_space = observation_space
         self.action_space = gym.spaces.Box(
-            low=np.array([-steer_max/vehicle_params.isw, -vehicle_params.vx*curvature_max]),
-            high=np.array([steer_max/vehicle_params.isw,  vehicle_params.vx*curvature_max]),
+            low=np.array([-steer_max/vehicle_params.isw]),
+            high=np.array([steer_max/vehicle_params.isw]),
             dtype=np.float64,
         )
         self.dt = dt
@@ -170,6 +174,7 @@ class VehicleSteeringEnv(gym.Env):
         # For rendering
         if render_mode is not None:
             raise NotImplementedError("Rendering is not implemented yet.")
+        
 
     def step(self, action: np.ndarray) -> tuple[Any, float, bool, bool, dict]:
         self.action_to_take = action
@@ -177,10 +182,6 @@ class VehicleSteeringEnv(gym.Env):
 
         road_bank_effect = np.sin(self.road_bank_angle) * np.array([0, 9.81, 0, 0])
 
-        t_span = (0, self.dt)
-        # if self.u.shape[0] == 1:  # only steering, no curvature reference
-        #     system_dynamics = lambda t, x: self.A @ x + self.B[:,0] * self.u + road_bank_effect
-        # else:  # steering and curvature reference
         if self.reference_type == "straight":
             curvature = 0.0
         elif self.reference_type == "double_lane_change":
@@ -189,7 +190,9 @@ class VehicleSteeringEnv(gym.Env):
         else:
             raise ValueError("Invalid reference type")
         u_aug = np.vstack((self.u, curvature*self.vx)).ravel()  # update the reference yaw rate
+
         self.X = self.X + self.vx * self.dt
+        t_span = (0, self.dt)
         system_dynamics = lambda t, x: self.A @ x + self.B @ u_aug + road_bank_effect
         sol = solve_ivp(system_dynamics, t_span, self.state)
         self.state = sol.y[:, -1]
@@ -209,6 +212,7 @@ class VehicleSteeringEnv(gym.Env):
         info = {}
 
         return observation, reward, is_terminated, is_truncated, info
+    
 
     def reset(
         self, *, seed: int | None = None, options: dict | None = None

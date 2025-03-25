@@ -131,6 +131,7 @@ class VehicleSteeringTaskDoubleLaneChange(VehicleSteeringTask):
     
 if __name__ == '__main__':
     # NOTE: must comment the "@register_task..." lines above before running this
+    # TODO: inherit directly from Task
     VehicleSteeringTaskStabilization()
     VehicleSteeringTaskDoubleLaneChange()
     print('Task setup ok')

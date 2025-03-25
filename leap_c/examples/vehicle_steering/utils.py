@@ -154,6 +154,7 @@ def lqr(
 #     K = np.linalg.solve(B.T.dot(P).dot(B) + R, rhs)
 #     return K, P
 
+
 def compute_curvature(p_xy: np.ndarray) -> np.ndarray:
     """
     :param p_xy: array of size (n,2) representing Cartesian 2D points
@@ -202,6 +203,23 @@ def get_double_lane_change_data(X: np.ndarray) -> tuple[np.ndarray, np.ndarray, 
     XY = np.vstack((X,Y)).T
     curvature = compute_curvature(XY)
     return curvature, Y, psi
+
+
+def frenet2inertial(
+    e1: np.ndarray, e2: np.ndarray, psi_ref: np.ndarray, vx: float, dt: float
+) -> tuple[np.ndarray, np.ndarray]:
+    """
+    Converts a trajectory from the body-fixed to the inertial coordinate frame.
+    Based on section 2.7 in https://link.springer.com/book/10.1007/978-1-4614-1433-9
+    Constant longitudinal speed is assumed.
+    """
+    x_int = vx * dt * np.cumsum(np.cos(psi_ref))
+    x = x_int - e1 * np.sin(e2 + psi_ref)
+
+    y_int = vx * dt * np.cumsum(np.sin(psi_ref))
+    y = y_int + e1 * np.cos(e2 + psi_ref)
+
+    return x, y
 
 
 if __name__ == "__main__":

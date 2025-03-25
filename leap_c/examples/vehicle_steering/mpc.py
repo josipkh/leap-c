@@ -81,22 +81,8 @@ def discrete_dynamics(
     x = ocp.model.x
     u = ocp.model.u
 
-    # param_names = ["cf", "cr", "m", "vx", "lf", "lr", "iz"]
-    # param_dict = find_param_in_p_or_p_global(param_names, ocp.model)
-
-    # cf = param_dict["cf"]
-    # cr = param_dict["cr"]
-    # m = param_dict["m"]
-    # vx = param_dict["vx"]
-    # lf = param_dict["lf"]
-    # lr = param_dict["lr"]
-    # iz = param_dict["iz"]
-
-    # vehicle_params = VehicleParams(cf=cf, cr=cr, m=m, vx=vx, lf=lf, lr=lr, iz=iz)
-
     dt = ocp.solver_options.tf / ocp.solver_options.N_horizon
 
-    # A, B = get_discrete_system(vehicle_params, dt=dt)
     A, B = get_discrete_system(dt=dt)
     B_steer = B[:, 0]
     B_ref = B[:, 1]
@@ -186,7 +172,6 @@ def export_parametric_ocp(
     ocp.constraints.x0 = x0
 
     steer_max = np.deg2rad(90)
-    # steer_max = np.array([np.deg2rad(90)])
 
     # Box constraints on u
     ocp.constraints.lbu = np.array([-steer_max])
