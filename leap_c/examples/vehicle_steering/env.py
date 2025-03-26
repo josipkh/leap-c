@@ -138,10 +138,9 @@ class VehicleSteeringEnv(gym.Env):
         max_time: float = 10.0,  # TODO: check max_time value
         vehicle_params: VehicleParams = VehicleParams(),
         steer_max: float = np.deg2rad(90),  # [rad]
-        curvature_max: float = 1,  # [1/m]
         road_bank_angle: float = 0.0,  # [rad]
         reference_type: str = "straight",
-        # TODO: check obs_space limits for derivatives
+        # TODO: check obs_space limits for error derivatives
         observation_space: gym.spaces.Box = gym.spaces.Box(
             low=np.array([-1.5, -100, -90*np.pi/180, -100]),
             high=np.array([1.5,  100,  90*np.pi/180,  100]),
@@ -171,7 +170,6 @@ class VehicleSteeringEnv(gym.Env):
         self.X = 0  # for tracking the global position of the vehicle
         self.vx = vehicle_params.vx
 
-        # For rendering
         if render_mode is not None:
             raise NotImplementedError("Rendering is not implemented yet.")
         
@@ -185,11 +183,11 @@ class VehicleSteeringEnv(gym.Env):
         if self.reference_type == "straight":
             curvature = 0.0
         elif self.reference_type == "double_lane_change":
-            X_preview = self.X + self.vx * self.dt * np.arange(3)
+            X_preview = self.X + self.vx * self.dt * np.arange(3)  # at least 3 points are needed
             curvature = get_double_lane_change_data(X_preview)[0][0]  # get the current road curvature
         else:
             raise ValueError("Invalid reference type")
-        u_aug = np.vstack((self.u, curvature*self.vx)).ravel()  # update the reference yaw rate
+        u_aug = np.vstack((self.u, curvature*self.vx)).ravel()  # set the reference yaw rate as an input
 
         self.X = self.X + self.vx * self.dt
         t_span = (0, self.dt)
@@ -270,7 +268,7 @@ class VehicleSteeringEnv(gym.Env):
     
     def render(self):
         print("rendering not implemented")
-        return np.random.rand(40,40,3)
+        return np.random.rand(40,40,3)  # return something so it doesn't break
     
 
 if __name__ == '__main__':
