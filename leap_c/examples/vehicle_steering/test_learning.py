@@ -13,8 +13,8 @@ args = parser.parse_args()
 
 
 cfg = SacFopBaseConfig()
-cfg.val.interval = 500
-cfg.train.steps = 1_000
+cfg.val.interval = 20 * 500
+cfg.train.steps = 100 * 1_000
 cfg.val.num_render_rollouts = 1
 cfg.log.wandb_logger = False
 cfg.log.tensorboard_logger = True

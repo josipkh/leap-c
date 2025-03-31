@@ -13,18 +13,12 @@ from dataclasses import asdict
 
 
 class VehicleSteeringMPC(Mpc):
-    """
-    Implements a linear MPC for active steering of an autonomous vehicle.
-    The model is described in the related environment module.
-    """
-
     def __init__(
         self,
         nominal_params: dict[str, np.ndarray] | None = None,
         learnable_params: list[str] | None = None,
         N_horizon: int = 10,
         tf: float = 0.5,
-        # discount_factor: float = 0.99,
         n_batch: int = 64,
         export_directory: Path | None = None,
         export_directory_sensitivity: Path | None = None,
