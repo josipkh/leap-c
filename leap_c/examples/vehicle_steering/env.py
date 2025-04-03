@@ -24,14 +24,15 @@ from leap_c.examples.vehicle_steering.utils import (
 
 @dataclass(kw_only=True)
 class VehicleParams:
-    cf: float | ca.SX = 72705.0     # [N/rad]   front cornering stiffness (for one tire)
-    cr: float | ca.SX = 72705.0     # [N/rad]   rear cornering stiffness (for one tire)
-    m:  float | ca.SX = 1600.0      # [kg]      vehicle mass
-    vx: float | ca.SX = 60 / 3.6    # [m/s]     longitudinal vehicle speed
-    lf: float | ca.SX = 1.311       # [m]       distance from the center of gravity to the front axle
-    lr: float | ca.SX = 1.311       # [m]       distance from the center of gravity to the rear axle
-    iz: float | ca.SX = 2394.0      # [kg*m^2]  vehicle moment of inertia
-    isw:float | ca.SX = 13          # [-]       steering ratio
+    cf:     float | ca.SX = 72705.0                 # [N/rad]   front cornering stiffness (for one tire)
+    cr:     float | ca.SX = 72705.0                 # [N/rad]   rear cornering stiffness (for one tire)
+    m:      float | ca.SX = 1600.0                  # [kg]      vehicle mass
+    vx:     float | ca.SX = 60 / 3.6                # [m/s]     longitudinal vehicle speed
+    lf:     float | ca.SX = 1.311                   # [m]       distance from the center of gravity to the front axle
+    lr:     float | ca.SX = 1.311                   # [m]       distance from the center of gravity to the rear axle
+    iz:     float | ca.SX = 2394.0                  # [kg*m^2]  vehicle moment of inertia
+    isw:    float | ca.SX = 13                      # [-]       steering ratio
+    sw_max: float | ca.SX = float(np.deg2rad(90))   # [rad] maximum steering wheel angle (wheel angle = steering wheel angle / steering ratio)
 
 
 def get_A_cont(
@@ -137,7 +138,7 @@ class VehicleSteeringEnv(gym.Env):
         dt: float = 0.05,
         max_time: float = 10.0,  # TODO: check max_time value
         vehicle_params: VehicleParams = VehicleParams(),
-        steer_max: float = np.deg2rad(90),  # [rad]
+        steer_max: float | None = None,
         road_bank_angle: float = 0.0,  # [rad]
         reference_type: str = "straight",
         # TODO: check obs_space limits for error derivatives
@@ -153,11 +154,15 @@ class VehicleSteeringEnv(gym.Env):
     ):
         super().__init__()
 
+        self.vehicle_params = vehicle_params
         self.init_state_dist = init_state_dist
         self.observation_space = observation_space
+        if steer_max is None:
+            steer_max = vehicle_params.sw_max
+        # action is the wheel steering angle (delta)
         self.action_space = gym.spaces.Box(
-            low=np.array([-steer_max/vehicle_params.isw]),
-            high=np.array([steer_max/vehicle_params.isw]),
+            low=np.array([-steer_max / vehicle_params.isw]),
+            high=np.array([steer_max / vehicle_params.isw]),
             dtype=np.float64,
         )
         self.dt = dt
@@ -169,14 +174,14 @@ class VehicleSteeringEnv(gym.Env):
         self.reference_type = reference_type
         self.X = 0  # for tracking the global position of the vehicle
         self.vx = vehicle_params.vx
+        self.env_changed = False
 
         if render_mode is not None:
             raise NotImplementedError("Rendering is not implemented yet.")
         
 
     def step(self, action: np.ndarray) -> tuple[Any, float, bool, bool, dict]:
-        self.action_to_take = action
-        self.u = action  # TODO: disturb action?
+        self.u = action
 
         road_bank_effect = np.sin(self.road_bank_angle) * np.array([0, 9.81, 0, 0])
 
@@ -189,7 +194,11 @@ class VehicleSteeringEnv(gym.Env):
             raise ValueError("Invalid reference type")
         u_aug = np.vstack((self.u, curvature*self.vx)).ravel()  # set the reference yaw rate as an input
 
-        self.X = self.X + self.vx * self.dt
+        self.X = self.X + self.vx * self.dt  # acceptably wrong (assumes small steering angles)
+
+        if self.X > 50 and not self.env_changed:
+            self._change_env_conditions()
+
         t_span = (0, self.dt)
         system_dynamics = lambda t, x: self.A @ x + self.B @ u_aug + road_bank_effect
         sol = solve_ivp(system_dynamics, t_span, self.state)
@@ -230,6 +239,7 @@ class VehicleSteeringEnv(gym.Env):
         plt.close("all")
 
         return self.state, {}
+    
 
     def _calculate_reward(self):
         # quadratic cost on lateral and heading errors, and their derivatives
@@ -246,6 +256,7 @@ class VehicleSteeringEnv(gym.Env):
             reward += 50
         
         return reward
+    
 
     def _is_done(self):
         # episode is done if the states (errors and derivatives) are close to the origin
@@ -266,6 +277,17 @@ class VehicleSteeringEnv(gym.Env):
 
         return done
     
+
+    def _change_env_conditions(self):
+        # reduce the friction coefficients to simulate a slippery road
+        self.vehicle_params.cf = 0.2 * self.vehicle_params.cf
+        self.vehicle_params.cr = 0.2 * self.vehicle_params.cr
+        self.A, self.B = get_continuous_system(vehicle_params=self.vehicle_params)
+        print('Changed the environment conditions')
+        self.env_changed = True
+        return None
+    
+
     def render(self):
         print("rendering not implemented")
         return np.random.rand(40,40,3)  # return something so it doesn't break
@@ -295,8 +317,9 @@ if __name__ == '__main__':
     S[:, 0] = s    
     for i in range(n_iter - 1):
         lqr_input = ctrl(S[:, i])
-        assert lqr_input < env.action_space.high[0], "Control input exceeds action space"
-        assert lqr_input > env.action_space.low[0], "Control input exceeds action space"
+        if np.abs(lqr_input) > env.action_space.high[0]:
+            lqr_input = np.sign(lqr_input) * env.action_space.high[0]
+            Warning("Action is out of bounds")
 
         A[:, i] = lqr_input
         S[:, i+1], r, term, trunc, _ = env.step(A[:, i])

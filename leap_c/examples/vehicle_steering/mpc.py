@@ -165,7 +165,8 @@ def export_parametric_ocp(
 
     ocp.constraints.x0 = x0
 
-    steer_max = np.deg2rad(90)
+    # control input is the wheel angle
+    steer_max = nominal_params["sw_max"] / nominal_params["isw"]
 
     # Box constraints on u
     ocp.constraints.lbu = np.array([-steer_max])
