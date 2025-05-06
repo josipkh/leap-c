@@ -8,7 +8,7 @@ from leap_c.examples.cartpole_dimensionless.env import (
     PendulumOnCartBalanceEnv,
     PendulumOnCartSwingupEnv,
 )
-from leap_c.examples.cartpole_dimensionless.mpc import PendulumOnCartMPC
+from leap_c.examples.cartpole_dimensionless.mpc import PendulumOnCartMpcDimensionless
 from leap_c.nn.modules import MpcSolutionModule
 from leap_c.registry import register_task
 from leap_c.task import Task
@@ -45,8 +45,8 @@ PARAMS_SWINGUP = OrderedDict(
 )
 
 
-@register_task("pendulum_swingup")
-class PendulumOnCartSwingup(Task):
+@register_task("pendulum_swingup_dimensionless")
+class PendulumOnCartSwingupDimensionless(Task):
     """Swing-up task for the pendulum on a cart system.
     The task is to swing up the pendulum from a downward position to the upright position
     (and balance it there)."""
@@ -55,7 +55,7 @@ class PendulumOnCartSwingup(Task):
         params = PARAMS_SWINGUP
         learnable_params = ["xref2"]
 
-        mpc = PendulumOnCartMPC(
+        mpc = PendulumOnCartMpcDimensionless(
             N_horizon=6,
             T_horizon=0.25,
             learnable_params=learnable_params,
@@ -82,30 +82,27 @@ class PendulumOnCartSwingup(Task):
 
         mpc_param = MpcParameter(p_global=param_nn)  # type: ignore
 
-        # scale the observation if dimensionless
+        # make the observation (x,dx,theta,dtheta) dimensionless
         if dimensionless:
-            obs = torch.tensor(
-                [
-                    obs[0] / self.params["l"],
-                    obs[1] / self.params["l"] * np.sqrt(self.params["l"] / self.params["g"]),
-                    obs[2],
-                    obs[3] * np.sqrt(self.params["l"] / self.params["g"]),
-                ]
-            )
+            l = PARAMS_SWINGUP["l"]
+            g = PARAMS_SWINGUP["g"]
+            obs[0][0] /= l
+            obs[0][1] /= l * np.sqrt(l/g)
+            obs[0][3] *= np.sqrt(l/g)
 
         return MpcInput(x0=obs, parameters=mpc_param)
 
 
-@register_task("pendulum_balance")
-class PendulumOnCartBalance(PendulumOnCartSwingup):
+@register_task("pendulum_balance_dimensionless")
+class PendulumOnCartBalanceDimensionless(PendulumOnCartSwingupDimensionless):
     """The same as PendulumOnCartSwingup, but the starting position of the pendulum is upright, making the task a balancing task."""
 
     def create_env(self, train: bool) -> gym.Env:
         return PendulumOnCartBalanceEnv()
 
 
-@register_task("pendulum_swingup_long_horizon")
-class PendulumOnCartSwingupLong(Task):
+@register_task("pendulum_swingup_long_horizon_dimensionless")
+class PendulumOnCartSwingupLongDimensionless(PendulumOnCartSwingupDimensionless):
     """Swing-up task for the pendulum on a cart system,
     like PendulumOnCartSwingup, but with a much longer horizon.
     """
@@ -114,11 +111,11 @@ class PendulumOnCartSwingupLong(Task):
         params = PARAMS_SWINGUP
         learnable_params = ["xref2"]
 
-        mpc = PendulumOnCartMPC(
+        mpc = PendulumOnCartMpcDimensionless(
             N_horizon=20,
             T_horizon=1,
             learnable_params=learnable_params,
             params=params,  # type: ignore
         )
         mpc_layer = MpcSolutionModule(mpc)
-        super().__init__(mpc_layer)
+        Task.__init__(self, mpc_layer)        

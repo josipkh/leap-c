@@ -40,7 +40,7 @@ PARAMS = OrderedDict(
 )
 
 
-class PendulumOnCartMPC(Mpc):
+class PendulumOnCartMpcDimensionless(Mpc):
     """
     Describes an inverted pendulum on a cart.
     The (possibly learnable) parameters of the system are given by
@@ -426,4 +426,4 @@ def export_parametric_ocp(
 
 
 if __name__ == "__main__":
-    mpc = PendulumOnCartMPC(learnable_params = ["xref2"])
+    mpc = PendulumOnCartMpcDimensionless(learnable_params = ["xref2"])

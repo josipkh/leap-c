@@ -31,4 +31,4 @@ cfg.sac.init_alpha = 0.10
 
 output_path = Path(f"/tmp/cartpole_dimensionless/sac_{args.seed}_{datetime.datetime.now().strftime('%Y%m%d%H%M%S')}")
 
-main("sac_zop", "pendulum_swingup", cfg, output_path, args.device)
+main("sac_zop", "pendulum_swingup_dimensionless", cfg, output_path, args.device)
