@@ -5,6 +5,8 @@ from gymnasium import spaces
 from gymnasium.envs.classic_control import utils as gym_utils
 from typing import Optional
 
+dimensionless = True
+
 class PendulumOnCartSwingupEnv(gym.Env):
     """
     An environment of a pendulum on a cart meant for swinging
@@ -58,7 +60,7 @@ class PendulumOnCartSwingupEnv(gym.Env):
         self.gravity = 9.81
         self.masscart = 1.0
         self.masspole = 0.1
-        self.length = 0.5
+        self.length = 0.5  # TODO: check if this should be 0.8
         self.Fmax = 80.0
         self.dt = 0.05
         self.max_time = 10.0
@@ -139,6 +141,11 @@ class PendulumOnCartSwingupEnv(gym.Env):
         """Execute the dynamics of the pendulum on cart."""
         if self.reset_needed:
             raise Exception("Call reset before using the step method.")
+        
+        # scale the action if dimensionless
+        if dimensionless:
+            action = action * self.masscart * self.gravity
+
         self.x = self.integrator(self.x, action, self.dt)
         self.t += self.dt
         theta = self.x[1]

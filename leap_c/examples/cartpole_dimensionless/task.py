@@ -4,24 +4,26 @@ from typing import Any, Optional
 import gymnasium as gym
 import numpy as np
 import torch
-from leap_c.examples.pendulum_on_a_cart.env import (
+from leap_c.examples.cartpole_dimensionless.env import (
     PendulumOnCartBalanceEnv,
     PendulumOnCartSwingupEnv,
 )
-from leap_c.examples.pendulum_on_a_cart.mpc import PendulumOnCartMPC
+from leap_c.examples.cartpole_dimensionless.mpc import PendulumOnCartMPC
 from leap_c.nn.modules import MpcSolutionModule
 from leap_c.registry import register_task
 from leap_c.task import Task
 
 from ...mpc import MpcInput, MpcParameter
 
+dimensionless = True
+
 PARAMS_SWINGUP = OrderedDict(
     [
-        ("M", np.array([1.0])),  # mass of the cart [kg]
-        ("m", np.array([0.1])),  # mass of the ball [kg]
-        ("g", np.array([9.81])), # gravity constant [m/s^2]
-        ("l", np.array([0.8])),  # length of the rod [m]
-        ("mu", np.array([1.0])), # friction coefficient [kg/s]
+        ("M", np.array([1.0])),     # mass of the cart [kg]
+        ("m", np.array([0.1])),     # mass of the ball [kg]
+        ("g", np.array([9.81])),    # gravity constant [m/s^2]
+        ("l", np.array([0.8])),     # length of the rod [m]
+        # ("mu", np.array([1.0])),  # friction coefficient [kg/s]
         # The quadratic cost matrix is calculated according to L@L.T
         ("L11", np.array([np.sqrt(2e3)])),
         ("L22", np.array([np.sqrt(2e3)])),
@@ -29,46 +31,16 @@ PARAMS_SWINGUP = OrderedDict(
         ("L44", np.array([np.sqrt(1e-2)])),
         ("L55", np.array([np.sqrt(2e-1)])),
         ("Lloweroffdiag", np.array([0.0] * (4 + 3 + 2 + 1))),
-        (
-            "c1",
-            np.array([0.0]),
-        ),  # position linear cost, only used for non-LS (!) cost
-        (
-            "c2",
-            np.array([0.0]),
-        ),  # theta linear cost, only used for non-LS (!) cost
-        (
-            "c3",
-            np.array([0.0]),
-        ),  # v linear cost, only used for non-LS (!) cost
-        (
-            "c4",
-            np.array([0.0]),
-        ),  # thetadot linear cost, only used for non-LS (!) cost
-        (
-            "c5",
-            np.array([0.0]),
-        ),  # u linear cost, only used for non-LS (!) cost
-        (
-            "xref1",
-            np.array([0.0]),
-        ),  # reference position, only used for LS cost
-        (
-            "xref2",
-            np.array([0.0]),
-        ),  # reference theta, only used for LS cost
-        (
-            "xref3",
-            np.array([0.0]),
-        ),  # reference v, only used for LS cost
-        (
-            "xref4",
-            np.array([0.0]),
-        ),  # reference thetadot, only used for LS cost
-        (
-            "uref",
-            np.array([0.0]),
-        ),  # reference u, only used for LS cost
+        ("c1", np.array([0.0])),    # position linear cost, only used for EXTERNAL cost
+        ("c2", np.array([0.0])),    # theta linear cost, only used for EXTERNAL cost
+        ("c3", np.array([0.0])),    # v linear cost, only used for EXTERNAL cost
+        ("c4", np.array([0.0])),    # thetadot linear cost, only used for EXTERNAL cost
+        ("c5", np.array([0.0])),    # u linear cost, only used for EXTERNAL cost
+        ("xref1", np.array([0.0])), # reference position, only used for NONLINEAR_LS cost
+        ("xref2", np.array([0.0])), # reference theta, only used for NONLINEAR_LS cost
+        ("xref3", np.array([0.0])), # reference v, only used for NONLINEAR_LS cost
+        ("xref4", np.array([0.0])), # reference thetadot, only used for NONLINEAR_LS cost
+        ("uref", np.array([0.0])),  # reference u, only used for NONLINEAR_LS cost
     ]
 )
 
@@ -109,6 +81,17 @@ class PendulumOnCartSwingup(Task):
             raise ValueError("Parameter tensor is required for MPC task.")
 
         mpc_param = MpcParameter(p_global=param_nn)  # type: ignore
+
+        # scale the observation if dimensionless
+        if dimensionless:
+            obs = torch.tensor(
+                [
+                    obs[0] / self.params["l"],
+                    obs[1] / self.params["l"] * np.sqrt(self.params["l"] / self.params["g"]),
+                    obs[2],
+                    obs[3] * np.sqrt(self.params["l"] / self.params["g"]),
+                ]
+            )
 
         return MpcInput(x0=obs, parameters=mpc_param)
 

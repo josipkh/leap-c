@@ -116,7 +116,7 @@ class PendulumOnCartMPC(Mpc):
 
         # non-dimensionalize the maximum force
         if dimensionless:
-            Fmax_hat = Fmax / (params["m"] * params["g"])
+            Fmax_hat = Fmax / (params["M"] * params["g"])
         else:
             Fmax_hat = Fmax
 
