@@ -60,7 +60,7 @@ class PendulumOnCartSwingupEnv(gym.Env):
         self.gravity = 9.81
         self.masscart = 1.0
         self.masspole = 0.1
-        self.length = 0.5  # TODO: check if this should be 0.8
+        self.length = 0.8
         self.Fmax = 80.0
         self.dt = 0.05
         self.max_time = 10.0
@@ -142,7 +142,7 @@ class PendulumOnCartSwingupEnv(gym.Env):
         if self.reset_needed:
             raise Exception("Call reset before using the step method.")
         
-        # scale the action if dimensionless
+        # scale the MPC output if dimensionless
         if dimensionless:
             action = action * self.masscart * self.gravity
 
@@ -344,7 +344,5 @@ class PendulumOnCartSwingupEnv(gym.Env):
 
 class PendulumOnCartBalanceEnv(PendulumOnCartSwingupEnv):
     def init_state(self, options: Optional[dict] = None) -> np.ndarray:
-        low, high = gym_utils.maybe_parse_reset_bounds(
-            options, -0.05, 0.05  # default low
-        )  # default high
+        low, high = gym_utils.maybe_parse_reset_bounds(options, -0.05, 0.05)
         return self.np_random.uniform(low=low, high=high, size=(4,))

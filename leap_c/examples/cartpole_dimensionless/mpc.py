@@ -103,7 +103,7 @@ class PendulumOnCartMpcDimensionless(Mpc):
             exact_hess_dyn: If False, the contributions of the dynamics will be left out of the Hessian.
             cost_type: The type of cost to use, either "EXTERNAL" or "NONLINEAR_LS".
         """
-        params = params if params is not None else PARAMS  # type:ignore
+        params = params if params is not None else PARAMS.copy()  # type:ignore
 
         # non-dimensionalize the time
         if dimensionless:
@@ -138,17 +138,15 @@ class PendulumOnCartMpcDimensionless(Mpc):
             params["L55"] = params["L55"] * (F_scale)**2
 
         ocp = export_parametric_ocp(
-            nominal_param=params.copy(),
+            nominal_param=params,
             cost_type=cost_type,
             exact_hess_dyn=exact_hess_dyn,
-            name="pendulum_on_cart",
+            name="cartpole_dimensionless",
             learnable_param=learnable_params,
             N_horizon=N_horizon,
             tf=T_horizon_hat,
             Fmax=Fmax_hat,
         )
-
-        self.given_default_param_dict: dict[str, np.ndarray] = params  # type:ignore
 
         super().__init__(
             ocp=ocp,
@@ -211,12 +209,15 @@ def f_expl_expr(model: AcadosModel) -> ca.SX:
         a_scale = [F_scale]
         ds_scale = [x_scale/t_scale, theta_scale/t_scale, x_scale/t_scale**2, theta_scale/t_scale**2]
 
+        # RHS states
         for k in range(len(s_scale)):
             f_expl = ca.substitute(f_expl, s[k], s_scale[k]*s_hat[k])
 
+        # RHS actions
         for k in range(len(a_scale)):
             f_expl = ca.substitute(f_expl, a[k], a_scale[k]*a_hat[k])
 
+        # LHS (derivatives)
         for k in range(len(ds_scale)):
             f_expl[k] /= ds_scale[k]
 
@@ -375,7 +376,7 @@ def export_parametric_ocp(
     ocp.constraints.idxbx_0 = np.array([0, 1, 2, 3])
     ocp.constraints.x0 = np.array([0.0, np.pi, 0.0, 0.0])
 
-    ocp.constraints.lbu = np.array([-Fmax])
+    ocp.constraints.lbu = np.array([-Fmax])  # already dimensionless
     ocp.constraints.ubu = np.array([+Fmax])
     ocp.constraints.idxbu = np.array([0])
 
