@@ -137,14 +137,35 @@ class PendulumOnCartSwingupEnv(gym.Env):
         self.window = None
         self.clock = None
 
+        def dim2nondim(x):
+            """Convert a dimensional observation to a nondimensional one."""
+            l = self.length
+            g = self.gravity
+            x[0] /= l
+            x[2] /= l * np.sqrt(l/g)
+            x[3] *= np.sqrt(l/g)
+            return x
+
+        def nondim2dim(x):
+            """Convert a nondimensional observation to a dimensional one."""
+            l = self.length
+            g = self.gravity
+            x[0] *= l
+            x[2] *= l * np.sqrt(l/g)
+            x[3] /= np.sqrt(l/g)
+            return x
+
+        self.dim2nondim = lambda x: dim2nondim(x)
+        self.nondim2dim = lambda x: nondim2dim(x)
+
     def step(self, action: np.ndarray) -> tuple[np.ndarray, float, bool, bool, dict]:
         """Execute the dynamics of the pendulum on cart."""
         if self.reset_needed:
             raise Exception("Call reset before using the step method.")
         
-        # scale the MPC output if dimensionless
+        # scale the MPC output back if dimensionless
         if dimensionless:
-            action = action * self.masscart * self.gravity
+            action = action * self.masscart * self.gravity  # [N]
 
         self.x = self.integrator(self.x, action, self.dt)
         self.t += self.dt
@@ -165,7 +186,11 @@ class PendulumOnCartSwingupEnv(gym.Env):
             trunc = True
         self.reset_needed = trunc or term
 
-        return self.x, r, term, trunc, {}
+        # make the observation (x,theta,dx,dtheta) dimensionless -> scaling moved to the environment
+        obs = self.x
+        if dimensionless:
+            obs = self.dim2nondim(obs)
+        return obs, r, term, trunc, {}
 
     def reset(
         self, *, seed: int | None = None, options: dict | None = None
@@ -180,7 +205,11 @@ class PendulumOnCartSwingupEnv(gym.Env):
 
         self.pos_trajectory = None
         self.pole_end_trajectory = None
-        return self.x, {}
+        
+        obs = self.x
+        if dimensionless:
+            obs = self.dim2nondim(obs)
+        return obs, {}
 
     def init_state(self, options: Optional[dict] = None) -> np.ndarray:
         return np.array([0.0, np.pi, 0.0, 0.0], dtype=np.float32)

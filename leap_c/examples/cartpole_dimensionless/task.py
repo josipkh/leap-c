@@ -82,13 +82,13 @@ class PendulumOnCartSwingupDimensionless(Task):
 
         mpc_param = MpcParameter(p_global=param_nn)  # type: ignore
 
-        # make the observation (x,theta,dx,dtheta) dimensionless
-        if dimensionless:
-            l = PARAMS_SWINGUP["l"]
-            g = PARAMS_SWINGUP["g"]
-            obs[0][0] /= l
-            obs[0][2] /= l * np.sqrt(l/g)
-            obs[0][3] *= np.sqrt(l/g)
+        # make the observation (x,theta,dx,dtheta) dimensionless -> scaling moved to the environment
+        # if dimensionless:
+        #     l = PARAMS_SWINGUP["l"]
+        #     g = PARAMS_SWINGUP["g"]
+        #     obs[0][0] /= l
+        #     obs[0][2] /= l * np.sqrt(l/g)
+        #     obs[0][3] *= np.sqrt(l/g)
 
         return MpcInput(x0=obs, parameters=mpc_param)
 
