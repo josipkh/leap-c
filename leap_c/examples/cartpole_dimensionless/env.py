@@ -118,6 +118,8 @@ class PendulumOnCartSwingupEnv(gym.Env):
         )
 
         self.action_space = spaces.Box(-self.Fmax, self.Fmax, dtype=np.float32)
+        Fmax_hat = self.Fmax / (self.masscart * self.gravity)  # scaled action limits
+        self.action_space_dimensionless = spaces.Box(-Fmax_hat, Fmax_hat, dtype=np.float32)
         self.observation_space = spaces.Box(-high, high, dtype=np.float32)
 
         self.reset_needed = True
@@ -187,9 +189,7 @@ class PendulumOnCartSwingupEnv(gym.Env):
         self.reset_needed = trunc or term
 
         # make the observation (x,theta,dx,dtheta) dimensionless -> scaling moved to the environment
-        obs = self.x
-        if dimensionless:
-            obs = self.dim2nondim(obs)
+        obs = self.dim2nondim(self.x) if dimensionless else self.x
         return obs, r, term, trunc, {}
 
     def reset(
