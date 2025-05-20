@@ -42,7 +42,7 @@ class SacFoaBaseConfig(SacBaseConfig):
 
 @dataclass(kw_only=True)
 class SacFopcBaseConfig(SacBaseConfig):
-    """Specific settings for the Foa trainer."""
+    """Specific settings for the Fopc trainer."""
 
     noise: str = "param"
     entropy_correction: bool = True

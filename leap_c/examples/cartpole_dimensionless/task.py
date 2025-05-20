@@ -9,11 +9,11 @@ from leap_c.examples.cartpole_dimensionless.env import (
     PendulumOnCartSwingupEnv,
 )
 from leap_c.examples.cartpole_dimensionless.mpc import PendulumOnCartMpcDimensionless
-from leap_c.nn.modules import MpcSolutionModule
+from leap_c.acados.layer import MpcSolutionModule
 from leap_c.registry import register_task
 from leap_c.task import Task
 
-from ...mpc import MpcInput, MpcParameter
+from leap_c.acados.mpc import MpcInput, MpcParameter
 
 dimensionless = True
 
