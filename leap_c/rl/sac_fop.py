@@ -2,7 +2,6 @@
 layer for the policy network."""
 
 from dataclasses import dataclass
-import math
 from pathlib import Path
 from typing import Any, Callable, Iterator, NamedTuple
 
@@ -11,12 +10,12 @@ import numpy as np
 import torch
 import torch.nn as nn
 
-from leap_c.mpc import MpcBatchedState
+from leap_c.acados.mpc import MpcBatchedState
 from leap_c.nn.gaussian import SquashedGaussian, BoundedTransform
 from leap_c.nn.mlp import MLP, MlpConfig
-from leap_c.nn.modules import MpcSolutionModule
+from leap_c.acados.layer import MpcSolutionModule
 from leap_c.registry import register_trainer
-from leap_c.rl.replay_buffer import ReplayBuffer
+from leap_c.rl.buffer import ReplayBuffer
 from leap_c.rl.sac import SacBaseConfig, SacCritic
 from leap_c.rl.utils import soft_target_update
 from leap_c.task import Task
@@ -24,7 +23,6 @@ from leap_c.trainer import Trainer
 
 
 NUM_THREADS_ACADOS_BATCH = 4
-
 
 @dataclass(kw_only=True)
 class SacFopBaseConfig(SacBaseConfig):
@@ -126,7 +124,6 @@ class FopActor(nn.Module):
                 .sqrt()
                 .log()
             )
-            # print(f"correction: mean {correction.mean()}, min {correction.min()}, max {correction.max()}")
             log_prob -= correction.unsqueeze(1)
 
         return SacFopActorOutput(
@@ -183,6 +180,7 @@ class FouActor(nn.Module):
         mpc_output, state_solution, _ = self.mpc(mpc_input, mpc_state)
 
         action_mpc = mpc_output.u0
+        action_unbounded = self.action_transform.inverse(action_mpc.detach(), padding=0.1)
         action_unbounded = self.action_transform.inverse(
             action_mpc.detach(), padding=0.1
         )
@@ -229,6 +227,7 @@ class SacFopTrainer(Trainer):
         self.q_optim = torch.optim.Adam(self.q.parameters(), lr=cfg.sac.lr_q)
 
         if cfg.noise == "param":
+            self.pi = FopActor(task, self.train_env, cfg.sac.actor_mlp, correction=cfg.entropy_correction)
             self.pi = FopActor(
                 task,
                 self.train_env,
@@ -283,17 +282,12 @@ class SacFopTrainer(Trainer):
                 action = pi_output.action.cpu().numpy()[0]
                 param = pi_output.param.cpu().numpy()[0]
 
-            # print("weight", param.item(), "log_prob", pi_output.log_prob.item())
-            self.report_stats("train_trajectory", {"param": param, "action": action})
-            self.report_stats("train_policy_rollout", pi_output.stats)
+            self.report_stats("train_trajectory", {"param": param, "action": action}, verbose=True)
+            self.report_stats("train_policy_rollout", pi_output.stats, verbose=True)  # type: ignore
 
             obs_prime, reward, is_terminated, is_truncated, info = self.train_env.step(
                 action
             )
-            if is_terminated:
-                print(obs_prime)
-                print(pi_output.state_solution.x.reshape(-1, 4))
-                print(pi_output.state_solution.u.reshape(-1, 2))
 
             if "episode" in info:
                 stats = info["episode"]
@@ -391,20 +385,17 @@ class SacFopTrainer(Trainer):
                 # soft updates
                 soft_target_update(self.q, self.q_target, self.cfg.sac.tau)
 
-                if self.state.step % self.cfg.sac.report_loss_freq == 0:
-                    loss_stats = {
-                        "q_loss": q_loss.item(),
-                        "pi_loss": pi_loss.item(),
-                        "alpha": alpha,
-                        "q": q.mean().item(),
-                        "q_target": target.mean().item(),
-                        "masked_samples_perc": 1 - mask_status.float().mean().item(),
-                        "entropy": -log_p.mean().item(),
+                loss_stats = {
+                    "q_loss": q_loss.item(),
+                    "pi_loss": pi_loss.item(),
+                    "alpha": alpha,
+                    "q": q.mean().item(),
+                    "q_target": target.mean().item(),
+                    "masked_samples_perc": 1 - mask_status.float().mean().item(),
+                    "entropy": -log_p.mean().item(),
                     }
-                    self.report_stats("loss", loss_stats, self.state.step + 1)
-                    self.report_stats(
-                        "train_policy_update", pi_o_stats, self.state.step + 1
-                    )
+                self.report_stats("loss", loss_stats)
+                self.report_stats("train_policy_update", pi_o_stats, verbose=True)
 
             yield 1
 
