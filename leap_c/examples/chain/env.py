@@ -116,9 +116,8 @@ def _compute_observation_space(param: dict[str, np.ndarray]) -> spaces.Box:
     vel_min = -vel_max
 
     return spaces.Box(
-        low=np.concatenate([pos_min, vel_min]),
-        high=np.concatenate([pos_max, vel_max]),
-        dtype=np.float32,
+        low=np.concatenate([pos_min, vel_min], dtype=np.float32),
+        high=np.concatenate([pos_max, vel_max], dtype=np.float32),
     )
 
 
@@ -185,9 +184,8 @@ class ChainEnv(gym.Env):
         self.observation_space = _compute_observation_space(self.param)
 
         self.action_space = spaces.Box(
-            low=np.array([-vmax, -vmax, -vmax]),
-            high=np.array([vmax, vmax, vmax]),
-            dtype=np.float32,
+            low=np.array([-vmax, -vmax, -vmax], dtype=np.float32),
+            high=np.array([vmax, vmax, vmax], dtype=np.float32),
         )
 
         self.dt = dt
