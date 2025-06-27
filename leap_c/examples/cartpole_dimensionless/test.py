@@ -4,7 +4,7 @@ from argparse import ArgumentParser
 from pathlib import Path
 
 from leap_c.run import main
-from leap_c.rl.sac import SacBaseConfig
+from leap_c.torch.rl.sac_fop import SacFopBaseConfig
 
 
 parser = ArgumentParser()
@@ -14,7 +14,7 @@ parser.add_argument("--seed", type=int, default=0)
 args = parser.parse_args()
 
 
-cfg = SacBaseConfig()
+cfg = SacFopBaseConfig()
 cfg.val.interval = 10_000
 cfg.train.steps = 50_000
 cfg.val.num_render_rollouts = 1
@@ -29,6 +29,6 @@ cfg.sac.lr_alpha = 1e-3
 cfg.sac.init_alpha = 0.10
 
 
-output_path = Path(f"/tmp/cartpole_dimensionless/sac_{args.seed}_{datetime.datetime.now().strftime('%Y%m%d%H%M%S')}")
+output_path = Path(f"/tmp/cartpole_dimensionless/sac_zop_{args.seed}_{datetime.datetime.now().strftime('%Y%m%d%H%M%S')}")
 
-main("sac_zop", "pendulum_swingup_dimensionless", cfg, output_path, args.device)
+main("sac_zop", "cartpole_swingup_dimensionless", cfg, output_path, args.device)

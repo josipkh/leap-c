@@ -9,11 +9,11 @@ from leap_c.examples.cartpole_dimensionless.env import (
     PendulumOnCartSwingupEnv,
 )
 from leap_c.examples.cartpole_dimensionless.mpc import PendulumOnCartMpcDimensionless
-from leap_c.acados.layer import MpcSolutionModule
+from leap_c.ocp.acados.layer import MpcSolutionModule
 from leap_c.registry import register_task
 from leap_c.task import Task
 
-from leap_c.acados.mpc import MpcInput, MpcParameter
+from leap_c.ocp.acados.mpc import MpcInput, MpcParameter
 
 dimensionless = True
 
@@ -45,7 +45,7 @@ PARAMS_SWINGUP = OrderedDict(
 )
 
 
-@register_task("pendulum_swingup_dimensionless")
+@register_task("cartpole_swingup_dimensionless")
 class PendulumOnCartSwingupDimensionless(Task):
     """Swing-up task for the pendulum on a cart system.
     The task is to swing up the pendulum from a downward position to the upright position
@@ -93,7 +93,7 @@ class PendulumOnCartSwingupDimensionless(Task):
         return MpcInput(x0=obs, parameters=mpc_param)
 
 
-@register_task("pendulum_balance_dimensionless")
+@register_task("cartpole_balance_dimensionless")
 class PendulumOnCartBalanceDimensionless(PendulumOnCartSwingupDimensionless):
     """The same as PendulumOnCartSwingup, but the starting position of the pendulum is upright, making the task a balancing task."""
 
@@ -101,7 +101,7 @@ class PendulumOnCartBalanceDimensionless(PendulumOnCartSwingupDimensionless):
         return PendulumOnCartBalanceEnv()
 
 
-@register_task("pendulum_swingup_long_horizon_dimensionless")
+@register_task("cartpole_swingup_long_horizon_dimensionless")
 class PendulumOnCartSwingupLongDimensionless(PendulumOnCartSwingupDimensionless):
     """Swing-up task for the pendulum on a cart system,
     like PendulumOnCartSwingup, but with a much longer horizon.
