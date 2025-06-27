@@ -72,7 +72,7 @@ PARAMS_SWINGUP = OrderedDict(
 )
 
 
-@register_task("cartpole")
+@register_task("cartpole_swingup")
 class CartPoleSwingup(Task):
     """Swing-up task for the pendulum on a cart system.
     The task is to swing up the pendulum from a downward position to the upright position

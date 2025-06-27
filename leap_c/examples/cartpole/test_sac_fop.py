@@ -4,7 +4,7 @@ from argparse import ArgumentParser
 from pathlib import Path
 
 from leap_c.run import main
-from leap_c.rl.sac_fop import SacFopBaseConfig
+from leap_c.torch.rl.sac_fop import SacFopBaseConfig
 
 
 parser = ArgumentParser()
@@ -18,7 +18,7 @@ cfg = SacFopBaseConfig()
 cfg.val.interval = 10_000
 cfg.train.steps = 50_000
 cfg.val.num_render_rollouts = 1
-cfg.log.wandb_logger = True
+cfg.log.wandb_logger = False
 cfg.log.tensorboard_logger = False
 cfg.sac.entropy_reward_bonus = False  # type: ignore
 cfg.sac.update_freq = 4
@@ -29,6 +29,6 @@ cfg.sac.lr_alpha = 1e-3
 cfg.sac.init_alpha = 0.10
 
 
-output_path = Path(f"/tmp/cartpole/sac_{args.seed}_{datetime.datetime.now().strftime('%Y%m%d%H%M%S')}")
+output_path = Path(f"/tmp/cartpole/sac_fop_{args.seed}_{datetime.datetime.now().strftime('%Y%m%d%H%M%S')}")
 
-main("sac_zop", "pendulum_swingup", cfg, output_path, args.device)
+main("sac_fop", "cartpole_swingup", cfg, output_path, args.device)
