@@ -10,37 +10,42 @@ from leap_c.examples.util import (
     translate_learnable_param_to_p_global,
 )
 from leap_c.ocp.acados.mpc import Mpc
+from config import get_large_cartpole_params
 
 dimensionless = True  # global setting
 
+cartpole_params = get_large_cartpole_params()
 PARAMS = OrderedDict(
     [
-        ("M", np.array([1.0])),     # mass of the cart [kg]
-        ("m", np.array([0.1])),     # mass of the ball [kg]
-        ("g", np.array([9.81])),    # gravity constant [m/s^2]
-        ("l", np.array([0.8])),     # length of the rod [m]
+        ("M", cartpole_params.M),     # mass of the cart [kg]
+        ("m", cartpole_params.m),     # mass of the ball [kg]
+        ("g", cartpole_params.g),     # gravity constant [m/s^2]
+        ("l", cartpole_params.l),     # length of the rod [m]
         # The quadratic cost matrix is calculated according to L@L.T
-        ("L11", np.array([np.sqrt(2e3)])),
-        ("L22", np.array([np.sqrt(2e3)])),
-        ("L33", np.array([np.sqrt(1e-2)])),
-        ("L44", np.array([np.sqrt(1e-2)])),
-        ("L55", np.array([np.sqrt(2e-1)])),
-        ("Lloweroffdiag", np.array([0.0] * (4 + 3 + 2 + 1))),
-        ("c1", np.array([0.0])),    # position linear cost, only used for EXTERNAL cost
-        ("c2", np.array([0.0])),    # theta linear cost, only used for EXTERNAL cost
-        ("c3", np.array([0.0])),    # v linear cost, only used for EXTERNAL cost
-        ("c4", np.array([0.0])),    # thetadot linear cost, only used for EXTERNAL cost
-        ("c5", np.array([0.0])),    # u linear cost, only used for EXTERNAL cost
-        ("xref1", np.array([0.0])), # reference position, only used for NONLINEAR_LS cost
-        ("xref2", np.array([0.0])), # reference theta, only used for NONLINEAR_LS cost
-        ("xref3", np.array([0.0])), # reference v, only used for NONLINEAR_LS cost
-        ("xref4", np.array([0.0])), # reference thetadot, only used for NONLINEAR_LS cost
-        ("uref", np.array([0.0])),  # reference u, only used for NONLINEAR_LS cost
+        ("L11", cartpole_params.L11),
+        ("L22", cartpole_params.L22),
+        ("L33", cartpole_params.L33),
+        ("L44", cartpole_params.L44),
+        ("L55", cartpole_params.L55),
+        ("Lloweroffdiag", cartpole_params.Lloweroffdiag),
+        ("c1", cartpole_params.c1),    # position linear cost, only used for EXTERNAL cost
+        ("c2", cartpole_params.c2),    # theta linear cost, only used for EXTERNAL cost
+        ("c3", cartpole_params.c3),    # v linear cost, only used for EXTERNAL cost
+        ("c4", cartpole_params.c4),    # thetadot linear cost, only used for EXTERNAL cost
+        ("c5", cartpole_params.c5),    # u linear cost, only used for EXTERNAL cost
+        ("xref1", cartpole_params.xref1), # reference position, only used for NONLINEAR_LS cost
+        ("xref2", cartpole_params.xref2), # reference theta, only used for NONLINEAR_LS cost
+        ("xref3", cartpole_params.xref3), # reference v, only used for NONLINEAR_LS cost
+        ("xref4", cartpole_params.xref4), # reference thetadot, only used for NONLINEAR_LS cost
+        ("uref", cartpole_params.uref),
+        ("dt", cartpole_params.dt), # time step [s]
+        ("Fmax", cartpole_params.Fmax),  # maximum force applied to the cart [N]
+        ("gamma", cartpole_params.gamma),  # discount factor for the cost function
     ]
 )
 
 
-class PendulumOnCartMpcDimensionless(Mpc):
+class CartpoleMpcDimensionless(Mpc):
     """
     Describes an inverted pendulum on a cart.
     The (possibly learnable) parameters of the system are given by
@@ -79,9 +84,6 @@ class PendulumOnCartMpcDimensionless(Mpc):
         params: dict[str, np.ndarray] | None = None,
         learnable_params: list[str] | None = None,
         N_horizon: int = 20,
-        T_horizon: float = 1.0,
-        Fmax: float = 80.0,
-        discount_factor: float = 0.99,
         n_batch: int = 64,
         exact_hess_dyn: bool = True,
         cost_type: str = "NONLINEAR_LS",
@@ -104,15 +106,16 @@ class PendulumOnCartMpcDimensionless(Mpc):
             cost_type: The type of cost to use, either "EXTERNAL" or "NONLINEAR_LS".
         """
         params = params if params is not None else PARAMS.copy()  # type:ignore
+        dt = params["dt"].item()
+        Fmax = params["Fmax"].item()
 
         # non-dimensionalize the time
         if dimensionless:
-            dt = T_horizon / N_horizon
             t_scale = np.sqrt(params["l"] / params["g"])[0]
             dt_hat = dt / t_scale
             T_horizon_hat = dt_hat * N_horizon
         else:
-            T_horizon_hat = T_horizon
+            T_horizon_hat = dt * N_horizon
 
         # non-dimensionalize the maximum force
         if dimensionless:
@@ -150,7 +153,7 @@ class PendulumOnCartMpcDimensionless(Mpc):
 
         super().__init__(
             ocp=ocp,
-            discount_factor=discount_factor,
+            discount_factor=params["gamma"].item(),
             n_batch_max=n_batch,
         )
 
@@ -312,13 +315,13 @@ def cost_expr_ext_cost_e(model: AcadosModel) -> ca.SX:
 
 def export_parametric_ocp(
     nominal_param: dict[str, np.ndarray],
-    cost_type: str = "NONLINEAR_LS",
-    exact_hess_dyn: bool = True,
-    name: str = "pendulum_on_cart",
-    learnable_param: list[str] | None = None,
-    Fmax: float = 80.0,
-    N_horizon: int = 50,
-    tf: float = 2.0,
+    cost_type: str,
+    exact_hess_dyn: bool,
+    name: str,
+    learnable_param: list[str] | None,
+    Fmax: float,
+    N_horizon: int,
+    tf: float,
 ) -> AcadosOcp:
     ocp = AcadosOcp()
 
@@ -427,4 +430,4 @@ def export_parametric_ocp(
 
 
 if __name__ == "__main__":
-    mpc = PendulumOnCartMpcDimensionless(learnable_params = ["xref2"])
+    mpc = CartpoleMpcDimensionless(learnable_params = ["xref2"])

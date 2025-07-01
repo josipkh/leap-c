@@ -1,13 +1,13 @@
 import gymnasium as gym
 import numpy as np
 from gymnasium import spaces
-
 from gymnasium.envs.classic_control import utils as gym_utils
 from typing import Optional
+from config import get_large_cartpole_params
 
 dimensionless = True
 
-class PendulumOnCartSwingupEnv(gym.Env):
+class CartpoleSwingupEnv(gym.Env):
     """
     An environment of a pendulum on a cart meant for swinging
     the pole into an upright position and holding it there.
@@ -57,14 +57,15 @@ class PendulumOnCartSwingupEnv(gym.Env):
         self,
         render_mode: str | None = None,
     ):
-        self.gravity = 9.81
-        self.masscart = 1.0
-        self.masspole = 0.1
-        self.length = 0.8
-        self.Fmax = 80.0
-        self.dt = 0.05
+        cartpole_params = get_large_cartpole_params()
+        self.gravity = cartpole_params.g.item()
+        self.masscart = cartpole_params.M.item()
+        self.masspole = cartpole_params.m.item()
+        self.length = cartpole_params.l.item()
+        self.Fmax = cartpole_params.Fmax.item()
+        self.dt = cartpole_params.dt.item()
         self.max_time = 10.0
-        self.x_threshold = 2.4
+        self.x_threshold = 5 * self.length
 
         def f_explicit(
             x,
@@ -212,6 +213,7 @@ class PendulumOnCartSwingupEnv(gym.Env):
         return obs, {}
 
     def init_state(self, options: Optional[dict] = None) -> np.ndarray:
+        """The pendulum is hanging down at the start."""
         return np.array([0.0, np.pi, 0.0, 0.0], dtype=np.float32)
 
     def include_this_state_trajectory_to_rendering(self, state_trajectory: np.ndarray):
@@ -371,7 +373,22 @@ class PendulumOnCartSwingupEnv(gym.Env):
             pygame.quit()
 
 
-class PendulumOnCartBalanceEnv(PendulumOnCartSwingupEnv):
+class CartpoleBalanceEnv(CartpoleSwingupEnv):
     def init_state(self, options: Optional[dict] = None) -> np.ndarray:
         low, high = gym_utils.maybe_parse_reset_bounds(options, -0.05, 0.05)
         return self.np_random.uniform(low=low, high=high, size=(4,))
+    
+
+if __name__ == "__main__":
+    # For testing the environment
+    env = CartpoleSwingupEnv()
+    obs, info = env.reset()
+    print("Initial observation:", obs)
+    for _ in range(100):
+        action = env.action_space.sample()  # Random action
+        obs, reward, done, truncated, info = env.step(action)
+        print(f"Step: obs={obs}, reward={reward}, done={done}, truncated={truncated}")
+        if done or truncated:
+            break
+    env.close()
+    print("Environment closed.")
