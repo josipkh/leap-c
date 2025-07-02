@@ -10,11 +10,9 @@ from leap_c.examples.util import (
     translate_learnable_param_to_p_global,
 )
 from leap_c.ocp.acados.mpc import Mpc
-from config import get_large_cartpole_params
+from leap_c.examples.cartpole_dimensionless.config import get_default_cartpole_params, dimensionless
 
-dimensionless = True  # global setting
-
-cartpole_params = get_large_cartpole_params()
+cartpole_params = get_default_cartpole_params()
 PARAMS = OrderedDict(
     [
         ("M", cartpole_params.M),     # mass of the cart [kg]
@@ -105,9 +103,10 @@ class CartpoleMpcDimensionless(Mpc):
             exact_hess_dyn: If False, the contributions of the dynamics will be left out of the Hessian.
             cost_type: The type of cost to use, either "EXTERNAL" or "NONLINEAR_LS".
         """
-        params = params if params is not None else PARAMS.copy()  # type:ignore
+        params = params if params is not None else PARAMS  # type:ignore
         dt = params["dt"].item()
         Fmax = params["Fmax"].item()
+        discount_factor = params["gamma"].item()
 
         # non-dimensionalize the time
         if dimensionless:
@@ -141,10 +140,10 @@ class CartpoleMpcDimensionless(Mpc):
             params["L55"] = params["L55"] * (F_scale)**2
 
         ocp = export_parametric_ocp(
-            nominal_param=params,
+            nominal_param=params.copy(),
             cost_type=cost_type,
             exact_hess_dyn=exact_hess_dyn,
-            name="cartpole_dimensionless",
+            name="cartpole_mpc",
             learnable_param=learnable_params,
             N_horizon=N_horizon,
             tf=T_horizon_hat,
@@ -153,7 +152,7 @@ class CartpoleMpcDimensionless(Mpc):
 
         super().__init__(
             ocp=ocp,
-            discount_factor=params["gamma"].item(),
+            discount_factor=discount_factor,
             n_batch_max=n_batch,
         )
 
@@ -384,20 +383,20 @@ def export_parametric_ocp(
     ocp.constraints.idxbu = np.array([0])
 
     # scale the constraint on the cart position
-    x_min = -2.4  # [m]
+    x_max = 3 * nominal_param["l"][0]  # [m]
     if dimensionless:
-        x_min /= nominal_param["l"][0]
-    ocp.constraints.lbx = np.array([x_min])
-    ocp.constraints.ubx = -ocp.constraints.lbx
+        x_max /= nominal_param["l"][0]
+    ocp.constraints.ubx = np.array([x_max])
+    ocp.constraints.lbx = -ocp.constraints.ubx
     ocp.constraints.idxbx = np.array([0])
-    ocp.constraints.lbx_e = np.array([x_min])
-    ocp.constraints.ubx_e = -ocp.constraints.lbx_e
+    ocp.constraints.ubx_e = np.array([x_max])
+    ocp.constraints.lbx_e = -ocp.constraints.ubx_e
     ocp.constraints.idxbx_e = np.array([0])
 
     # scale the slack penalty on the cart position
     slack_penalty = 1e3
     if dimensionless:
-        slack_penalty *= nominal_param["l"][0] ** 2
+        slack_penalty *= nominal_param["l"][0] ** 2  # TODO: check scaling
     ocp.constraints.idxsbx = np.array([0])
     ocp.cost.Zu = ocp.cost.Zl = np.array([slack_penalty])
     ocp.cost.zu = ocp.cost.zl = np.array([0.0])
@@ -413,8 +412,12 @@ def export_parametric_ocp(
     ocp.solver_options.exact_hess_dyn = exact_hess_dyn
     ocp.solver_options.qp_solver = "PARTIAL_CONDENSING_HPIPM"
     ocp.solver_options.qp_solver_ric_alg = 1
-    ocp.solver_options.qp_tol = 1e-7
     ocp.solver_options.with_batch_functionality = True
+
+    # warmstarting
+    ocp.solver_options.qp_solver_warm_start = 0
+    ocp.solver_options.nlp_solver_warm_start_first_qp = True
+    ocp.solver_options.nlp_solver_warm_start_first_qp_from_nlp = True
 
     #####################################################
 

@@ -2,11 +2,10 @@ from collections import OrderedDict
 from typing import Any, Optional
 
 import gymnasium as gym
-import numpy as np
 import torch
 from leap_c.examples.cartpole_dimensionless.env import (
-    CartpoleBalanceEnv,
-    CartpoleSwingupEnv,
+    CartpoleBalanceEnvDimensionless,
+    CartpoleSwingupEnvDimensionless,
 )
 from leap_c.examples.cartpole_dimensionless.mpc import CartpoleMpcDimensionless
 from leap_c.ocp.acados.layer import MpcSolutionModule
@@ -14,11 +13,9 @@ from leap_c.registry import register_task
 from leap_c.task import Task
 
 from leap_c.ocp.acados.mpc import MpcInput, MpcParameter
-from config import get_large_cartpole_params
+from leap_c.examples.cartpole_dimensionless.config import get_default_cartpole_params
 
-dimensionless = True
-
-cartpole_params = get_large_cartpole_params()
+cartpole_params = get_default_cartpole_params()
 PARAMS_SWINGUP = OrderedDict(
     [
         ("M", cartpole_params.M),     # mass of the cart [kg]
@@ -68,7 +65,7 @@ class CartpoleSwingupDimensionless(Task):
         super().__init__(mpc_layer)
 
     def create_env(self, train: bool) -> gym.Env:
-        return CartpoleSwingupEnv()
+        return CartpoleSwingupEnvDimensionless()
 
     @property
     def param_space(self) -> gym.spaces.Box | None:
@@ -85,14 +82,6 @@ class CartpoleSwingupDimensionless(Task):
 
         mpc_param = MpcParameter(p_global=param_nn)  # type: ignore
 
-        # make the observation (x,theta,dx,dtheta) dimensionless -> scaling moved to the environment
-        # if dimensionless:
-        #     l = PARAMS_SWINGUP["l"]
-        #     g = PARAMS_SWINGUP["g"]
-        #     obs[0][0] /= l
-        #     obs[0][2] /= l * np.sqrt(l/g)
-        #     obs[0][3] *= np.sqrt(l/g)
-
         return MpcInput(x0=obs, parameters=mpc_param)
 
 
@@ -101,7 +90,7 @@ class CartpoleBalanceDimensionless(CartpoleSwingupDimensionless):
     """The same as CartpoleSwingup, but the starting position of the pendulum is upright, making the task a balancing task."""
 
     def create_env(self, train: bool) -> gym.Env:
-        return CartpoleBalanceEnv()
+        return CartpoleBalanceEnvDimensionless()
 
 
 @register_task("cartpole_swingup_long_horizon_dimensionless")

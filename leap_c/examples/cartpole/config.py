@@ -1,6 +1,5 @@
 from dataclasses import dataclass, asdict
 import numpy as np
-from typing import List
 
 
 @dataclass(kw_only=True)

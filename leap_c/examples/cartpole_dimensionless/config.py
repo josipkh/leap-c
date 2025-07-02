@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 import numpy as np
 
+dimensionless = False  # global setting, used in env and mpc
 
 @dataclass(kw_only=True)
 class CartPoleParams:
@@ -36,6 +37,38 @@ class CartPoleParams:
     Fmax: np.ndarray      # maximum force applied to the cart [N]
     dt: np.ndarray        # time step [s]
     gamma: np.ndarray     # discount factor for the cost function
+
+
+def get_default_cartpole_params() -> CartPoleParams:
+    return CartPoleParams(
+        M=np.array([1.0]),
+        m=np.array([0.1]),
+        g=np.array([9.81]),
+        l=np.array([0.8]),
+
+        L11=np.array([np.sqrt(2e3)]),
+        L22=np.array([np.sqrt(2e3)]),
+        L33=np.array([np.sqrt(1e-2)]),
+        L44=np.array([np.sqrt(1e-2)]),
+        L55=np.array([np.sqrt(2e-1)]),
+        Lloweroffdiag=np.array([0.0] * (4 + 3 + 2 + 1)),
+
+        c1=np.array([0.0]),
+        c2=np.array([0.0]),
+        c3=np.array([0.0]),
+        c4=np.array([0.0]),
+        c5=np.array([0.0]),
+
+        xref1=np.array([0.0]),
+        xref2=np.array([0.0]),
+        xref3=np.array([0.0]),
+        xref4=np.array([0.0]),
+        uref=np.array([0.0]),
+
+        Fmax=np.array([80.0]),
+        dt=np.array([0.05]),
+        gamma=np.array([0.99]),
+    )
 
 
 def get_large_cartpole_params() -> CartPoleParams:

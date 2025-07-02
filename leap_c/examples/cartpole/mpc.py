@@ -138,15 +138,12 @@ class CartPoleMPC(Mpc):
             nominal_param=params.copy(),
             cost_type=cost_type,
             exact_hess_dyn=exact_hess_dyn,
-            name="pendulum_on_cart",
+            name="cartpole",
             learnable_param=learnable_params,
             N_horizon=N_horizon,
             tf=T_horizon,
             Fmax=Fmax,
-            sensitivity_ocp=False,
         )
-
-        self.given_default_param_dict: dict[str, np.ndarray] = params  # type:ignore
 
         super().__init__(
             ocp=ocp,
@@ -273,14 +270,13 @@ def cost_expr_ext_cost_e(model: AcadosModel) -> ca.SX:
 
 def export_parametric_ocp(
     nominal_param: dict[str, np.ndarray],
-    cost_type: str = "NONLINEAR_LS",
-    exact_hess_dyn: bool = True,
-    name: str = "pendulum_on_cart",
-    learnable_param: list[str] | None = None,
-    Fmax: float = 80.0,
-    N_horizon: int = 50,
-    tf: float = 2.0,
-    sensitivity_ocp=False,
+    cost_type: str,# = "NONLINEAR_LS",
+    exact_hess_dyn: bool,# = True,
+    name: str,# = "cartpole",
+    learnable_param: list[str] | None,# = None,
+    Fmax: float,# = 80.0,
+    N_horizon: int,# = 50,
+    tf: float,# = 2.0,
 ) -> AcadosOcp:
     ocp = AcadosOcp()
 
@@ -375,3 +371,7 @@ def export_parametric_ocp(
         )
 
     return ocp
+
+
+if __name__ == "__main__":
+    mpc = CartPoleMPC(learnable_params = ["xref2"])

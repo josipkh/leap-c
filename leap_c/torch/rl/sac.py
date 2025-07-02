@@ -104,16 +104,7 @@ class SacCritic(nn.Module):
                 for qe in self.extractor
             ]
         )
-        try:
-            self.action_space = env.action_space_dimensionless
-        except:
-            import time
-            Warning(
-                "The environment does not have a dimensionless action space. "
-                "Using the original action space instead."
-            )
-            time.sleep(3)
-            self.action_space = env.action_space
+        self.action_space = env.action_space
 
     def forward(self, x: torch.Tensor, a: torch.Tensor):
         a_norm = min_max_scaling(a, self.action_space)  # type: ignore

@@ -3,11 +3,9 @@ import numpy as np
 from gymnasium import spaces
 from gymnasium.envs.classic_control import utils as gym_utils
 from typing import Optional
-from config import get_large_cartpole_params
+from leap_c.examples.cartpole_dimensionless.config import get_default_cartpole_params, dimensionless
 
-dimensionless = True
-
-class CartpoleSwingupEnv(gym.Env):
+class CartpoleSwingupEnvDimensionless(gym.Env):
     """
     An environment of a pendulum on a cart meant for swinging
     the pole into an upright position and holding it there.
@@ -57,7 +55,7 @@ class CartpoleSwingupEnv(gym.Env):
         self,
         render_mode: str | None = None,
     ):
-        cartpole_params = get_large_cartpole_params()
+        cartpole_params = get_default_cartpole_params()
         self.gravity = cartpole_params.g.item()
         self.masscart = cartpole_params.M.item()
         self.masspole = cartpole_params.m.item()
@@ -65,7 +63,7 @@ class CartpoleSwingupEnv(gym.Env):
         self.Fmax = cartpole_params.Fmax.item()
         self.dt = cartpole_params.dt.item()
         self.max_time = 10.0
-        self.x_threshold = 5 * self.length
+        self.x_threshold = 3 * self.length
 
         def f_explicit(
             x,
@@ -108,7 +106,7 @@ class CartpoleSwingupEnv(gym.Env):
 
         self.integrator = lambda x, u, t: rk4_step(f_explicit, x, u, t)
 
-        high = np.array(
+        obs_ub = np.array(
             [
                 self.x_threshold * 2,
                 2 * np.pi,
@@ -118,10 +116,12 @@ class CartpoleSwingupEnv(gym.Env):
             dtype=np.float32,
         )
 
-        self.action_space = spaces.Box(-self.Fmax, self.Fmax, dtype=np.float32)
-        Fmax_hat = self.Fmax / (self.masscart * self.gravity)  # scaled action limits
-        self.action_space_dimensionless = spaces.Box(-Fmax_hat, Fmax_hat, dtype=np.float32)
-        self.observation_space = spaces.Box(-high, high, dtype=np.float32)
+        if dimensionless:
+            act_ub = self.Fmax / (self.masscart * self.gravity)  # scaled action limits
+        else:
+            act_ub = self.Fmax
+        self.action_space = spaces.Box(-act_ub, act_ub, dtype=np.float32)
+        self.observation_space = spaces.Box(-obs_ub, obs_ub, dtype=np.float32)
 
         self.reset_needed = True
         self.t = 0
@@ -168,9 +168,10 @@ class CartpoleSwingupEnv(gym.Env):
         
         # scale the MPC output back if dimensionless
         if dimensionless:
-            action = action * self.masscart * self.gravity  # [N]
+            action *= self.masscart * self.gravity  # [N]
 
         self.x = self.integrator(self.x, action, self.dt)
+        self.x_trajectory.append(self.x)  # type: ignore
         self.t += self.dt
         theta = self.x[1]
         if theta > 2 * np.pi:
@@ -183,15 +184,24 @@ class CartpoleSwingupEnv(gym.Env):
 
         term = False
         trunc = False
+        info = {}
         if self.x[0] > self.x_threshold or self.x[0] < -self.x_threshold:
             term = True  # Just terminating should be enough punishment when reward is positive
+            info = {"task": {"violation": True, "success": False}}
         if self.t > self.max_time:
+            # check if the pole is upright in the last 10 steps
+            if len(self.x_trajectory) >= 10:
+                success = all(np.abs(self.x_trajectory[i][1]) < 0.1 for i in range(-10, 0))  # TODO: check if 0.1 is a good limit
+            else:
+                success = False  # Not enough data to determine success
+
+            info = {"task": {"violation": False, "success": success}}
             trunc = True
         self.reset_needed = trunc or term
 
-        # make the observation (x,theta,dx,dtheta) dimensionless -> scaling moved to the environment
+        # make the observation (x,theta,dx,dtheta) dimensionless
         obs = self.dim2nondim(self.x) if dimensionless else self.x
-        return obs, r, term, trunc, {}
+        return obs, r, term, trunc, info
 
     def reset(
         self, *, seed: int | None = None, options: dict | None = None
@@ -204,12 +214,11 @@ class CartpoleSwingupEnv(gym.Env):
         self.x = self.init_state(options)
         self.reset_needed = False
 
+        self.x_trajectory = []
         self.pos_trajectory = None
         self.pole_end_trajectory = None
-        
-        obs = self.x
-        if dimensionless:
-            obs = self.dim2nondim(obs)
+
+        obs = self.dim2nondim(obs) if dimensionless else self.x
         return obs, {}
 
     def init_state(self, options: Optional[dict] = None) -> np.ndarray:
@@ -373,7 +382,7 @@ class CartpoleSwingupEnv(gym.Env):
             pygame.quit()
 
 
-class CartpoleBalanceEnv(CartpoleSwingupEnv):
+class CartpoleBalanceEnvDimensionless(CartpoleSwingupEnvDimensionless):
     def init_state(self, options: Optional[dict] = None) -> np.ndarray:
         low, high = gym_utils.maybe_parse_reset_bounds(options, -0.05, 0.05)
         return self.np_random.uniform(low=low, high=high, size=(4,))
@@ -381,7 +390,7 @@ class CartpoleBalanceEnv(CartpoleSwingupEnv):
 
 if __name__ == "__main__":
     # For testing the environment
-    env = CartpoleSwingupEnv()
+    env = CartpoleSwingupEnvDimensionless()
     obs, info = env.reset()
     print("Initial observation:", obs)
     for _ in range(100):
