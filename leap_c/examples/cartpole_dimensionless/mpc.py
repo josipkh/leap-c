@@ -2,6 +2,7 @@ import casadi as ca
 import numpy as np
 from acados_template import AcadosModel, AcadosOcp
 from casadi.tools import struct_symSX
+from collections import OrderedDict
 from leap_c.examples.util import (
     assign_lower_triangular,
     find_param_in_p_or_p_global,
@@ -11,8 +12,8 @@ from leap_c.ocp.acados.mpc import Mpc
 from leap_c.examples.cartpole_dimensionless.config import CartPoleParams, get_default_cartpole_params, dimensionless
 from leap_c.examples.cartpole_dimensionless.utils import (
     get_transformation_matrices,
-    get_params_as_ordered_dict,
-    get_params_as_dataclass,
+    convert_dict_to_dataclass,
+    convert_dataclass_to_dict,
 )
 
 # TODO: scale the other cost parameters (c, xref, uref)
@@ -79,10 +80,17 @@ class CartpoleMpcDimensionless(Mpc):
             cost_type: The type of cost to use, either "EXTERNAL" or "NONLINEAR_LS".
         """
         if params is None:
-            params = get_params_as_ordered_dict(get_default_cartpole_params())  # for the rest of the framework
+            input("Warning: No parameters provided in the MPC, using default parameters. Press Enter to continue...")
+            params = convert_dataclass_to_dict(get_default_cartpole_params())  # for the rest of the framework
+
+        if not isinstance(params, OrderedDict):
+            if isinstance(params, CartPoleParams):
+                params = convert_dataclass_to_dict(params)
+            else:
+                raise ValueError("The parameters must be an OrderedDict or a CartPoleParams dataclass.")
 
         if dimensionless:
-            Mx, Mu, Mt = get_transformation_matrices(get_params_as_dataclass(params))  # x(physical) = Mx * x(dimensionless)
+            Mx, Mu, Mt = get_transformation_matrices(convert_dict_to_dataclass(params))  # x(physical) = Mx * x(dimensionless)
             # Mx_inv = np.linalg.inv(Mx)
             Mu_inv = np.linalg.inv(Mu)
             Mt_inv = np.linalg.inv(Mt)
@@ -412,4 +420,4 @@ def export_parametric_ocp(
 
 
 if __name__ == "__main__":
-    mpc = CartpoleMpcDimensionless(learnable_params = ["xref2"])
+    mpc = CartpoleMpcDimensionless(params=get_default_cartpole_params(), learnable_params = ["xref2"])

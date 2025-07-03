@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 import numpy as np
 
-dimensionless = False  # global setting, used in env and mpc
+dimensionless = True  # global setting, used in env and mpc
 
 @dataclass(kw_only=True)
 class CartPoleParams:
@@ -11,7 +11,7 @@ class CartPoleParams:
     g: np.ndarray         # gravity constant [m/s^2]
     l: np.ndarray         # length of the rod [m]
 
-    # Cost matrix factorization parameters
+    # Cost matrix factorization parameters, W = L @ L.T
     L11: np.ndarray
     L22: np.ndarray
     L33: np.ndarray
@@ -40,6 +40,7 @@ class CartPoleParams:
 
 
 def get_default_cartpole_params() -> CartPoleParams:
+    """Parameter values in the original leap-c example."""
     return CartPoleParams(
         M=np.array([1.0]),
         m=np.array([0.1]),
@@ -72,6 +73,7 @@ def get_default_cartpole_params() -> CartPoleParams:
 
 
 def get_large_cartpole_params() -> CartPoleParams:
+    """Based on the model in https://ieeexplore.ieee.org/document/10178119"""
     return CartPoleParams(
         M=np.array([1.0]),
         m=np.array([0.5]),
@@ -104,7 +106,7 @@ def get_large_cartpole_params() -> CartPoleParams:
 
 
 def get_small_cartpole_params() -> CartPoleParams:
-    """Returns a CartPoleParams instance with default parameter values."""
+    """Dynamically similar to the system in https://ieeexplore.ieee.org/document/10178119"""
     return CartPoleParams(
         M=np.array([0.44]),
         m=np.array([0.22]),

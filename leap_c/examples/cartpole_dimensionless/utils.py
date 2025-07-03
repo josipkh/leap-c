@@ -1,6 +1,7 @@
 import numpy as np
-from leap_c.examples.cartpole_dimensionless.config import CartPoleParams
 from collections import OrderedDict
+from copy import deepcopy
+from leap_c.examples.cartpole_dimensionless.config import CartPoleParams, get_default_cartpole_params
 
 
 def get_transformation_matrices(cartpole_params: CartPoleParams) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
@@ -16,8 +17,9 @@ def get_transformation_matrices(cartpole_params: CartPoleParams) -> tuple[np.nda
     return Mx, Mu, Mt
 
 
-def get_params_as_ordered_dict(cartpole_params: CartPoleParams) -> OrderedDict[str, np.ndarray]:
-    params_dict = OrderedDict(
+def convert_dataclass_to_dict(cartpole_params: CartPoleParams) -> OrderedDict[str, np.ndarray]:
+    assert isinstance(cartpole_params, CartPoleParams), "Input must be a CartPoleParams dataclass"
+    return OrderedDict(
         [
             ("M", cartpole_params.M),     # mass of the cart [kg]
             ("m", cartpole_params.m),     # mass of the ball [kg]
@@ -45,11 +47,11 @@ def get_params_as_ordered_dict(cartpole_params: CartPoleParams) -> OrderedDict[s
             ("gamma", cartpole_params.gamma),  # discount factor for the cost function
         ]
     )
-    return params_dict
 
 
-def get_params_as_dataclass(params_dict: OrderedDict[str, np.ndarray]) -> CartPoleParams:
+def convert_dict_to_dataclass(params_dict: OrderedDict[str, np.ndarray]) -> CartPoleParams:
     """Converts an OrderedDict of parameters to a CartPoleParams dataclass."""
+    assert isinstance(params_dict, OrderedDict), "Input must be an OrderedDict"
     return CartPoleParams(
         M=params_dict["M"],
         m=params_dict["m"],
@@ -77,9 +79,51 @@ def get_params_as_dataclass(params_dict: OrderedDict[str, np.ndarray]) -> CartPo
     )
 
 
+def get_similar_cartpole_params(reference_params: CartPoleParams, cart_mass: float, rod_length: float) -> CartPoleParams:
+    """Returns the parameters of a cartpole system (MDP) dynamically similar to the reference one."""
+    Mx, Mu, _ = get_transformation_matrices(reference_params)
+
+    new_params = deepcopy(reference_params)
+    new_params.M = np.array([cart_mass])
+    new_params.l = np.array([rod_length])
+
+    # match the Pi-group(s)
+    new_params.m = reference_params.m * (new_params.M / reference_params.M)
+
+    # match the cost matrices (just Q and R for now)
+    Q = np.diag([
+        reference_params.L11.item()**2,
+        reference_params.L22.item()**2,
+        reference_params.L33.item()**2,
+        reference_params.L44.item()**2,
+    ])
+    R = np.diag([reference_params.L55.item()**2])
+    mx, mu, _ = get_transformation_matrices(new_params)
+    M = Mx @ np.linalg.inv(mx)
+    q_diag = (M.T @ Q @ M).diagonal()
+    M = Mu @ np.linalg.inv(mu)
+    r_diag = (M.T @ R @ M).diagonal()
+
+    for k in range(5):
+        new_params.__setattr__(f"L{k+1}{k+1}", np.array([np.sqrt(q_diag[k] if k < 4 else r_diag[k-4])]))
+    
+    # match the input constraint
+    new_params.Fmax = reference_params.Fmax * (new_params.M / reference_params.M)
+
+    # match the sampling time
+    new_params.dt = reference_params.dt * np.sqrt(new_params.l / reference_params.l)
+
+    # match the discount factor (through the continuous discount rate r = -log(gamma)/dt)
+    new_params.gamma = np.power(reference_params.gamma, new_params.dt / reference_params.dt)
+
+    return new_params
+
+
 if __name__ == "__main__":
     from leap_c.examples.cartpole_dimensionless.config import get_default_cartpole_params
-    # Example usage
     params = get_default_cartpole_params()    
     Mx, Mu, Mt = get_transformation_matrices(params)
-    params_dict = get_params_as_ordered_dict(params)
+    params_dict = convert_dataclass_to_dict(params)
+    params_dataclass = convert_dict_to_dataclass(params_dict)
+    similar_params = get_similar_cartpole_params(reference_params=params, cart_mass=0.5, rod_length=0.1)
+    assert similar_params.M.item()/similar_params.m.item() == params.M.item()/params.m.item(), "Pi-group mismatch"

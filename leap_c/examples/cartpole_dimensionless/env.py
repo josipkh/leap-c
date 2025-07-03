@@ -56,8 +56,12 @@ class CartpoleSwingupEnvDimensionless(gym.Env):
     def __init__(
         self,
         render_mode: str | None = None,
-        cartpole_params: CartPoleParams | None = get_default_cartpole_params(),
+        cartpole_params: CartPoleParams | None = None,
     ):
+        if cartpole_params is None:
+            input("Warning: No parameters provided in the env, using default parameters. Press Enter to continue...")
+            cartpole_params = get_default_cartpole_params()
+
         if dimensionless:
             self.Mx, self.Mu, self.Mt = get_transformation_matrices(cartpole_params)  # x(physical) = Mx * x(dimensionless)
             self.Mx_inv = np.linalg.inv(self.Mx)
@@ -387,8 +391,7 @@ class CartpoleBalanceEnvDimensionless(CartpoleSwingupEnvDimensionless):
     
 
 if __name__ == "__main__":
-    # For testing the environment
-    env = CartpoleSwingupEnvDimensionless()
+    env = CartpoleSwingupEnvDimensionless(cartpole_params=get_default_cartpole_params())
     obs, info = env.reset()
     print("Initial observation:", obs)
     for _ in range(100):

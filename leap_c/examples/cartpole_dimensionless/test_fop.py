@@ -1,8 +1,6 @@
-"""Main script to run experiments."""
 import datetime
 from argparse import ArgumentParser
 from pathlib import Path
-
 from leap_c.run import main
 from leap_c.torch.rl.sac_fop import SacFopBaseConfig
 from leap_c.examples.cartpole_dimensionless.config import dimensionless
@@ -32,6 +30,7 @@ cfg.sac.lr_q = 1e-4
 cfg.sac.lr_alpha = 1e-3
 cfg.sac.init_alpha = 0.1
 
+# all settings:
 # cfg.train.steps = 50_000
 # cfg.train.start = 0
 # cfg.val.interval = 10_000
@@ -77,6 +76,6 @@ time_str = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
 output_path = Path(f"{output_root}/{args.task}/{args.trainer}_{args.seed}_{time_str}")
 
 # for testing transfer learning, set the output path to an existing directory
-# output_path = Path("")
+# output_path = Path("/tmp/cartpole_swingup_dimensionless/sac_fop_0_20250703150533")
 
 main(args.trainer, args.task, cfg, output_path, args.device)
