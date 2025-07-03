@@ -1,5 +1,3 @@
-from collections import OrderedDict
-
 import casadi as ca
 import numpy as np
 from acados_template import AcadosModel, AcadosOcp
@@ -10,37 +8,14 @@ from leap_c.examples.util import (
     translate_learnable_param_to_p_global,
 )
 from leap_c.ocp.acados.mpc import Mpc
-from leap_c.examples.cartpole_dimensionless.config import get_default_cartpole_params, dimensionless
-
-cartpole_params = get_default_cartpole_params()
-PARAMS = OrderedDict(
-    [
-        ("M", cartpole_params.M),     # mass of the cart [kg]
-        ("m", cartpole_params.m),     # mass of the ball [kg]
-        ("g", cartpole_params.g),     # gravity constant [m/s^2]
-        ("l", cartpole_params.l),     # length of the rod [m]
-        # The quadratic cost matrix is calculated according to L@L.T
-        ("L11", cartpole_params.L11),
-        ("L22", cartpole_params.L22),
-        ("L33", cartpole_params.L33),
-        ("L44", cartpole_params.L44),
-        ("L55", cartpole_params.L55),
-        ("Lloweroffdiag", cartpole_params.Lloweroffdiag),
-        ("c1", cartpole_params.c1),    # position linear cost, only used for EXTERNAL cost
-        ("c2", cartpole_params.c2),    # theta linear cost, only used for EXTERNAL cost
-        ("c3", cartpole_params.c3),    # v linear cost, only used for EXTERNAL cost
-        ("c4", cartpole_params.c4),    # thetadot linear cost, only used for EXTERNAL cost
-        ("c5", cartpole_params.c5),    # u linear cost, only used for EXTERNAL cost
-        ("xref1", cartpole_params.xref1), # reference position, only used for NONLINEAR_LS cost
-        ("xref2", cartpole_params.xref2), # reference theta, only used for NONLINEAR_LS cost
-        ("xref3", cartpole_params.xref3), # reference v, only used for NONLINEAR_LS cost
-        ("xref4", cartpole_params.xref4), # reference thetadot, only used for NONLINEAR_LS cost
-        ("uref", cartpole_params.uref),
-        ("dt", cartpole_params.dt), # time step [s]
-        ("Fmax", cartpole_params.Fmax),  # maximum force applied to the cart [N]
-        ("gamma", cartpole_params.gamma),  # discount factor for the cost function
-    ]
+from leap_c.examples.cartpole_dimensionless.config import CartPoleParams, get_default_cartpole_params, dimensionless
+from leap_c.examples.cartpole_dimensionless.utils import (
+    get_transformation_matrices,
+    get_params_as_ordered_dict,
+    get_params_as_dataclass,
 )
+
+# TODO: scale the other cost parameters (c, xref, uref)
 
 
 class CartpoleMpcDimensionless(Mpc):
@@ -79,7 +54,7 @@ class CartpoleMpcDimensionless(Mpc):
 
     def __init__(
         self,
-        params: dict[str, np.ndarray] | None = None,
+        params: dict[str, np.ndarray] | CartPoleParams | None = None,
         learnable_params: list[str] | None = None,
         N_horizon: int = 20,
         n_batch: int = 64,
@@ -103,41 +78,41 @@ class CartpoleMpcDimensionless(Mpc):
             exact_hess_dyn: If False, the contributions of the dynamics will be left out of the Hessian.
             cost_type: The type of cost to use, either "EXTERNAL" or "NONLINEAR_LS".
         """
-        params = params if params is not None else PARAMS  # type:ignore
+        if params is None:
+            params = get_params_as_ordered_dict(get_default_cartpole_params())  # for the rest of the framework
+
+        if dimensionless:
+            Mx, Mu, Mt = get_transformation_matrices(get_params_as_dataclass(params))  # x(physical) = Mx * x(dimensionless)
+            # Mx_inv = np.linalg.inv(Mx)
+            Mu_inv = np.linalg.inv(Mu)
+            Mt_inv = np.linalg.inv(Mt)
+
         dt = params["dt"].item()
         Fmax = params["Fmax"].item()
         discount_factor = params["gamma"].item()
 
         # non-dimensionalize the time
         if dimensionless:
-            t_scale = np.sqrt(params["l"] / params["g"])[0]
-            dt_hat = dt / t_scale
+            dt_hat = (Mt_inv * dt).item()
             T_horizon_hat = dt_hat * N_horizon
         else:
             T_horizon_hat = dt * N_horizon
 
         # non-dimensionalize the maximum force
         if dimensionless:
-            Fmax_hat = Fmax / (params["M"] * params["g"])
+            Fmax_hat = (Mu_inv * Fmax).item()
         else:
             Fmax_hat = Fmax
 
-        # scale the cost
+        # scale the (quadratic) cost matrices
         if dimensionless:
-            M = params["M"]
-            g = params["g"]
-            l = params["l"]
-
-            t_scale = np.sqrt(l/g)
-            x_scale = l
-            theta_scale = 1
-            F_scale = M*g
-
-            params["L11"] = params["L11"] * (x_scale)**2
-            params["L22"] = params["L22"] * (x_scale/t_scale)**2
-            params["L33"] = params["L33"] * (theta_scale)**2
-            params["L44"] = params["L44"] * (theta_scale/t_scale)**2
-            params["L55"] = params["L55"] * (F_scale)**2
+            Mx_sq_diag = (Mx @ Mx).diagonal()
+            Mu_sq_diag = (Mu @ Mu).diagonal()
+            params["L11"] *= Mx_sq_diag[0]
+            params["L22"] *= Mx_sq_diag[1]
+            params["L33"] *= Mx_sq_diag[2]
+            params["L44"] *= Mx_sq_diag[3]
+            params["L55"] *= Mu_sq_diag[0]
 
         ocp = export_parametric_ocp(
             nominal_param=params.copy(),
@@ -336,8 +311,14 @@ def export_parametric_ocp(
 
     ocp.model.x = ca.SX.sym("x", ocp.dims.nx)  # type:ignore
     ocp.model.u = ca.SX.sym("u", ocp.dims.nu)  # type:ignore
-    ocp.model.x_labels = ["x", "theta", "dx", "dtheta"]
-    ocp.model.u_labels = ["F"]
+
+    if dimensionless:
+        ocp.model.x_labels = ["x_hat", "theta_hat", "dx_hat", "dtheta_hat"]
+        ocp.model.u_labels = ["F_hat"]
+        ocp.model.name += "_dimensionless"
+    else:
+        ocp.model.x_labels = ["x", "theta", "dx", "dtheta"]
+        ocp.model.u_labels = ["F"]
 
     ocp = translate_learnable_param_to_p_global(
         nominal_param=nominal_param,
@@ -376,16 +357,14 @@ def export_parametric_ocp(
 
     ######## Constraints ########
     ocp.constraints.idxbx_0 = np.array([0, 1, 2, 3])
-    ocp.constraints.x0 = np.array([0.0, np.pi, 0.0, 0.0])
+    ocp.constraints.x0 = np.array([0.0, np.pi, 0.0, 0.0])  # no scaling needed
 
     ocp.constraints.lbu = np.array([-Fmax])  # already dimensionless
     ocp.constraints.ubu = np.array([+Fmax])
     ocp.constraints.idxbu = np.array([0])
 
     # scale the constraint on the cart position
-    x_max = 3 * nominal_param["l"][0]  # [m]
-    if dimensionless:
-        x_max /= nominal_param["l"][0]
+    x_max = 3 * (1.0 if dimensionless else nominal_param["l"][0])  # relative or absolute
     ocp.constraints.ubx = np.array([x_max])
     ocp.constraints.lbx = -ocp.constraints.ubx
     ocp.constraints.idxbx = np.array([0])
@@ -396,7 +375,7 @@ def export_parametric_ocp(
     # scale the slack penalty on the cart position
     slack_penalty = 1e3
     if dimensionless:
-        slack_penalty *= nominal_param["l"][0] ** 2  # TODO: check scaling
+        slack_penalty *= nominal_param["l"][0] ** 2
     ocp.constraints.idxsbx = np.array([0])
     ocp.cost.Zu = ocp.cost.Zl = np.array([slack_penalty])
     ocp.cost.zu = ocp.cost.zl = np.array([0.0])

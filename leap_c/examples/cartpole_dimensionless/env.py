@@ -3,7 +3,9 @@ import numpy as np
 from gymnasium import spaces
 from gymnasium.envs.classic_control import utils as gym_utils
 from typing import Optional
-from leap_c.examples.cartpole_dimensionless.config import get_default_cartpole_params, dimensionless
+from leap_c.examples.cartpole_dimensionless.config import CartPoleParams, get_default_cartpole_params, dimensionless
+from leap_c.examples.cartpole_dimensionless.utils import get_transformation_matrices
+
 
 class CartpoleSwingupEnvDimensionless(gym.Env):
     """
@@ -54,8 +56,14 @@ class CartpoleSwingupEnvDimensionless(gym.Env):
     def __init__(
         self,
         render_mode: str | None = None,
+        cartpole_params: CartPoleParams | None = get_default_cartpole_params(),
     ):
-        cartpole_params = get_default_cartpole_params()
+        if dimensionless:
+            self.Mx, self.Mu, self.Mt = get_transformation_matrices(cartpole_params)  # x(physical) = Mx * x(dimensionless)
+            self.Mx_inv = np.linalg.inv(self.Mx)
+            self.Mu_inv = np.linalg.inv(self.Mu)
+            self.Mt_inv = np.linalg.inv(self.Mt)
+
         self.gravity = cartpole_params.g.item()
         self.masscart = cartpole_params.M.item()
         self.masspole = cartpole_params.m.item()
@@ -63,7 +71,7 @@ class CartpoleSwingupEnvDimensionless(gym.Env):
         self.Fmax = cartpole_params.Fmax.item()
         self.dt = cartpole_params.dt.item()
         self.max_time = 10.0
-        self.x_threshold = 3 * self.length
+        self.x_threshold = 3 * self.length  # this should be physical
 
         def f_explicit(
             x,
@@ -120,6 +128,7 @@ class CartpoleSwingupEnvDimensionless(gym.Env):
             act_ub = self.Fmax / (self.masscart * self.gravity)  # scaled action limits
         else:
             act_ub = self.Fmax
+
         self.action_space = spaces.Box(-act_ub, act_ub, dtype=np.float32)
         self.observation_space = spaces.Box(-obs_ub, obs_ub, dtype=np.float32)
 
@@ -140,35 +149,20 @@ class CartpoleSwingupEnvDimensionless(gym.Env):
         self.window = None
         self.clock = None
 
-        def dim2nondim(x):
-            """Convert a dimensional observation to a nondimensional one."""
-            l = self.length
-            g = self.gravity
-            x[0] /= l
-            x[2] /= l * np.sqrt(l/g)
-            x[3] *= np.sqrt(l/g)
-            return x
+        self.dim2nondim_x = lambda x: self.Mx_inv @ x if dimensionless else x
+        self.nondim2dim_x = lambda x: self.Mx @ x if dimensionless else x
+        self.dim2nondim_u = lambda u: self.Mu_inv @ u if dimensionless else u
+        self.nondim2dim_u = lambda u: self.Mu @ u if dimensionless else u
 
-        def nondim2dim(x):
-            """Convert a nondimensional observation to a dimensional one."""
-            l = self.length
-            g = self.gravity
-            x[0] *= l
-            x[2] *= l * np.sqrt(l/g)
-            x[3] /= np.sqrt(l/g)
-            return x
-
-        self.dim2nondim = lambda x: dim2nondim(x)
-        self.nondim2dim = lambda x: nondim2dim(x)
 
     def step(self, action: np.ndarray) -> tuple[np.ndarray, float, bool, bool, dict]:
         """Execute the dynamics of the pendulum on cart."""
         if self.reset_needed:
-            raise Exception("Call reset before using the step method.")
+            raise RuntimeError("Call reset before using the step method.")
         
         # scale the MPC output back if dimensionless
         if dimensionless:
-            action *= self.masscart * self.gravity  # [N]
+            action = self.nondim2dim_u(action)
 
         self.x = self.integrator(self.x, action, self.dt)
         self.x_trajectory.append(self.x)  # type: ignore
@@ -200,28 +194,32 @@ class CartpoleSwingupEnvDimensionless(gym.Env):
         self.reset_needed = trunc or term
 
         # make the observation (x,theta,dx,dtheta) dimensionless
-        obs = self.dim2nondim(self.x) if dimensionless else self.x
+        obs = self.dim2nondim_x(self.x) if dimensionless else self.x
+
         return obs, r, term, trunc, info
 
+
     def reset(
-        self, *, seed: int | None = None, options: dict | None = None
+            self, *, seed: int | None = None, options: dict | None = None
     ) -> tuple[np.ndarray, dict]:  # type: ignore
         if seed is not None:
             super().reset(seed=seed)
             self.observation_space.seed(seed)
             self.action_space.seed(seed)
+
         self.t = 0
-        self.x = self.init_state(options)
+        self.x = self.init_state()
         self.reset_needed = False
 
         self.x_trajectory = []
         self.pos_trajectory = None
         self.pole_end_trajectory = None
 
-        obs = self.dim2nondim(obs) if dimensionless else self.x
+        obs = self.dim2nondim_x(self.x) if dimensionless else self.x
         return obs, {}
 
-    def init_state(self, options: Optional[dict] = None) -> np.ndarray:
+
+    def init_state(self) -> np.ndarray:
         """The pendulum is hanging down at the start."""
         return np.array([0.0, np.pi, 0.0, 0.0], dtype=np.float32)
 

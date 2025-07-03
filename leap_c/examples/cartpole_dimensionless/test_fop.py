@@ -5,11 +5,13 @@ from pathlib import Path
 
 from leap_c.run import main
 from leap_c.torch.rl.sac_fop import SacFopBaseConfig
+from leap_c.examples.cartpole_dimensionless.config import dimensionless
 
 keep_output = False  # if False, the output is saved in /tmp/
 
 parser = ArgumentParser()
-parser.add_argument("--task", type=str, default="cartpole_swingup_dimensionless")
+task_name = "cartpole_swingup" + ("_dimensionless" if dimensionless else "")
+parser.add_argument("--task", type=str, default=task_name)
 parser.add_argument("--trainer", type=str, default="sac_fop")
 parser.add_argument("--output_path", type=Path, default=None)
 parser.add_argument("--device", type=str, default="cpu")
