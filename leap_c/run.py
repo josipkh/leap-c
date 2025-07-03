@@ -74,7 +74,10 @@ def main(
     trainer = create_trainer(trainer_name, task, output_path, device, cfg)
 
     if continue_run and (output_path / "ckpts").exists():
+        print(f"Resurrecting trainer {trainer_name} for task {task_name} from {output_path}...")
         trainer.load(output_path)
+        trainer.state.step = 0  # reset the step counter to continue training
+        trainer.state.scores = []  # reset the scores to continue validating
 
     # store task name and trainer name for resurrection
     with open(output_path / "resurrect.txt", "w") as f:
