@@ -7,10 +7,9 @@ from leap_c.ocp.acados.mpc import MpcInput, MpcParameter
 from leap_c.ocp.acados.layer import MpcSolutionModule
 from leap_c.examples.cartpole_dimensionless.env import CartpoleSwingupEnvDimensionless
 from leap_c.examples.cartpole_dimensionless.mpc import CartpoleMpcDimensionless
-from leap_c.examples.cartpole_dimensionless.config import get_default_cartpole_params
+from leap_c.examples.cartpole_dimensionless.config import get_default_cartpole_params, test_similar
 from leap_c.examples.cartpole_dimensionless.utils import convert_dataclass_to_dict, get_similar_cartpole_params
 
-test_similar = False
 
 @register_task("cartpole_swingup_dimensionless")
 class CartpoleSwingupDimensionless(Task):

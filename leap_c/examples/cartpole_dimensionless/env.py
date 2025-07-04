@@ -263,6 +263,15 @@ class CartpoleSwingupEnvDimensionless(gym.Env):
             self.window = pygame.display.set_mode(
                 (self.screen_width, self.screen_height)
             )
+        
+        # initialize the font for displaying text
+        if not pygame.get_init():
+            pygame.init()
+        if not pygame.font.get_init():
+            pygame.font.init()
+        if not hasattr(self, "font"):
+            self.font = pygame.font.SysFont(None, 24)
+
         if self.clock is None and self.render_mode == "human":
             self.clock = pygame.time.Clock()
 
@@ -364,6 +373,12 @@ class CartpoleSwingupEnvDimensionless(gym.Env):
                 )
 
         canvas = pygame.transform.flip(canvas, False, True)
+
+        # add the length of the pole to the canvas
+        length_text = f"L = {self.length:.2f} m"
+        text_surface = self.font.render(length_text, True, (0, 0, 0))
+        text_rect = text_surface.get_rect(center=(self.screen_width // 2, 20))
+        canvas.blit(text_surface, text_rect)
 
         if self.render_mode == "human":
             self.window.blit(canvas, (0, 0))  # type:ignore

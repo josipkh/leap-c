@@ -1,7 +1,9 @@
 from dataclasses import dataclass
 import numpy as np
 
-dimensionless = True  # global setting, used in env and mpc
+# global settings, used in several places
+dimensionless = True
+test_similar = False  # if False, use the default cartpole parameters, otherwise use the dynamically similar ones
 
 @dataclass(kw_only=True)
 class CartPoleParams:
