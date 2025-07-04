@@ -5,6 +5,7 @@ from gymnasium.envs.classic_control import utils as gym_utils
 from typing import Optional
 from leap_c.examples.cartpole_dimensionless.config import CartPoleParams, get_default_cartpole_params, dimensionless
 from leap_c.examples.cartpole_dimensionless.utils import get_transformation_matrices
+from scipy.integrate import solve_ivp
 
 
 class CartpoleSwingupEnvDimensionless(gym.Env):
@@ -109,14 +110,20 @@ class CartpoleSwingupEnvDimensionless(gym.Env):
                 ]
             )
 
-        def rk4_step(f, x, u, h):
-            k1 = f(x, u)
-            k2 = f(x + 0.5 * h * k1, u)
-            k3 = f(x + 0.5 * h * k2, u)
-            k4 = f(x + h * k3, u)
-            return x + h / 6 * (k1 + 2 * k2 + 2 * k3 + k4)
+        # def rk4_step(f, x, u, h):
+        #     k1 = f(x, u)
+        #     k2 = f(x + 0.5 * h * k1, u)
+        #     k3 = f(x + 0.5 * h * k2, u)
+        #     k4 = f(x + h * k3, u)
+        #     return x + h / 6 * (k1 + 2 * k2 + 2 * k3 + k4)
+        
+        def scipy_step(f, x, u, h):
+            t_span = (0, h)
+            fun = lambda t, y: np.hstack(( f(y[:4], y[4], h), 0.0))
+            sol = solve_ivp(fun, t_span, np.hstack((x,u)), method="RK45")
+            return sol.y[:4,-1]
 
-        self.integrator = lambda x, u, t: rk4_step(f_explicit, x, u, t)
+        self.integrator = lambda x, u, dt: scipy_step(f_explicit, x, u, dt)
 
         obs_ub = np.array(
             [
@@ -407,13 +414,11 @@ class CartpoleBalanceEnvDimensionless(CartpoleSwingupEnvDimensionless):
 
 if __name__ == "__main__":
     env = CartpoleSwingupEnvDimensionless(cartpole_params=get_default_cartpole_params())
-    obs, info = env.reset()
+    obs, info = env.reset(seed=0)
     print("Initial observation:", obs)
-    for _ in range(100):
+    for _ in range(10):
         action = env.action_space.sample()  # Random action
         obs, reward, done, truncated, info = env.step(action)
         print(f"Step: obs={obs}, reward={reward}, done={done}, truncated={truncated}")
-        if done or truncated:
-            break
     env.close()
     print("Environment closed.")
