@@ -14,7 +14,9 @@ from leap_c.examples.cartpole_dimensionless.utils import (
     get_transformation_matrices,
     convert_dict_to_dataclass,
     convert_dataclass_to_dict,
+    get_similar_cartpole_params,
 )
+from copy import deepcopy
 
 # TODO: scale the other cost parameters (c, xref, uref)
 
@@ -79,6 +81,8 @@ class CartpoleMpcDimensionless(Mpc):
             exact_hess_dyn: If False, the contributions of the dynamics will be left out of the Hessian.
             cost_type: The type of cost to use, either "EXTERNAL" or "NONLINEAR_LS".
         """
+        params = deepcopy(params)  # to prevent any modification to the input
+
         if params is None:
             input("Warning: No parameters provided in the MPC, using default parameters. Press Enter to continue...")
             params = convert_dataclass_to_dict(get_default_cartpole_params())  # for the rest of the framework
@@ -123,7 +127,7 @@ class CartpoleMpcDimensionless(Mpc):
             params["L55"] *= Mu_sq_diag[0]
 
         ocp = export_parametric_ocp(
-            nominal_param=params.copy(),
+            nominal_param=params,
             cost_type=cost_type,
             exact_hess_dyn=exact_hess_dyn,
             name="cartpole_mpc",
@@ -420,4 +424,25 @@ def export_parametric_ocp(
 
 
 if __name__ == "__main__":
-    mpc = CartpoleMpcDimensionless(params=get_default_cartpole_params(), learnable_params = ["xref2"])
+    from leap_c.examples.cartpole_dimensionless.utils import get_cost_matrices
+
+    learnable_params = ["xref2"]
+    reference_params = get_default_cartpole_params()
+    reference_mpc = CartpoleMpcDimensionless(params=reference_params, learnable_params=learnable_params, N_horizon=5)
+    cart_mass = 5.0  # [kg] 0.5
+    rod_length = 5.0  # [m] 0.1
+    similar_params = get_similar_cartpole_params(reference_params=reference_params, cart_mass=cart_mass, rod_length=rod_length)
+    similar_mpc = CartpoleMpcDimensionless(params=similar_params, learnable_params=learnable_params, N_horizon=5)
+    if dimensionless:
+        assert np.allclose(similar_mpc.ocp.constraints.ubu, reference_mpc.ocp.constraints.ubu)
+        assert np.allclose(similar_mpc.ocp.constraints.ubx, reference_mpc.ocp.constraints.ubx)
+
+        Mx, Mu, _ = get_transformation_matrices(reference_params)
+        mx, mu, _ = get_transformation_matrices(similar_params)
+
+        Q, R = get_cost_matrices(reference_params)
+        q, r = get_cost_matrices(similar_params)
+
+        assert np.allclose(Mx @ Q @ Mx, mx @ q @ mx)
+        assert np.allclose(Mu @ R @ Mu, mu @ r @ mu)
+    print("ok")
