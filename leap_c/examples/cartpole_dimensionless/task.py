@@ -20,8 +20,8 @@ class CartpoleSwingupDimensionless(Task):
     def __init__(self):
         if test_similar:
             reference_params = get_default_cartpole_params()
-            cart_mass = 0.5  # [kg]
-            rod_length = 0.1  # [m]
+            cart_mass = 5.0  # [kg] 0.5
+            rod_length = 5.0  # [m] 0.1
             self.params_dataclass = get_similar_cartpole_params(
                 reference_params=reference_params, cart_mass=cart_mass, rod_length=rod_length
             )
@@ -68,3 +68,7 @@ class CartpoleSwingupDimensionless(Task):
 
 #     def create_env(self, train: bool) -> gym.Env:
 #         return CartpoleBalanceEnvDimensionless()
+
+if __name__ == "__main__":
+    # comment the @register_task decorator to run this file directly
+    task = CartpoleSwingupDimensionless()

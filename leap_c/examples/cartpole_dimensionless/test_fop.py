@@ -5,7 +5,7 @@ from leap_c.run import main
 from leap_c.torch.rl.sac_fop import SacFopBaseConfig
 from leap_c.examples.cartpole_dimensionless.config import dimensionless
 
-keep_output = False  # if False, the output is saved in /tmp/
+keep_output = True  # if False, the output is saved in /tmp/
 
 parser = ArgumentParser()
 task_name = "cartpole_swingup" + ("_dimensionless" if dimensionless else "")
@@ -76,6 +76,6 @@ time_str = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
 output_path = Path(f"{output_root}/{args.task}/{args.trainer}_{args.seed}_{time_str}")
 
 # for testing transfer learning, set the output path to an existing directory
-# output_path = Path("/tmp/cartpole_swingup_dimensionless/sac_fop_0_20250703150533")
+# output_path = Path("/home/josip/leap-c/output/cartpole_swingup_dimensionless/sac_fop_0_20250704102054_transfer_2")
 
 main(args.trainer, args.task, cfg, output_path, args.device)
