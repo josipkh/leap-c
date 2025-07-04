@@ -91,13 +91,7 @@ def get_similar_cartpole_params(reference_params: CartPoleParams, cart_mass: flo
     new_params.m = reference_params.m * (new_params.M / reference_params.M)
 
     # match the cost matrices (just Q and R for now)
-    Q = np.diag([
-        reference_params.L11.item()**2,
-        reference_params.L22.item()**2,
-        reference_params.L33.item()**2,
-        reference_params.L44.item()**2,
-    ])
-    R = np.diag([reference_params.L55.item()**2])
+    Q, R = get_cost_matrices(reference_params)
     mx, mu, _ = get_transformation_matrices(new_params)
     M = Mx @ np.linalg.inv(mx)
     q_diag = (M.T @ Q @ M).diagonal()
@@ -106,6 +100,11 @@ def get_similar_cartpole_params(reference_params: CartPoleParams, cart_mass: flo
 
     for k in range(5):
         new_params.__setattr__(f"L{k+1}{k+1}", np.array([np.sqrt(q_diag[k] if k < 4 else r_diag[k-4])]))
+
+    # check the matrices
+    q, r = get_cost_matrices(new_params)
+    assert np.allclose(Mx @ Q @ Mx, mx @ q @ mx)
+    assert np.allclose(Mu @ R @ Mu, mu @ r @ mu)
     
     # match the input constraint
     new_params.Fmax = reference_params.Fmax * (new_params.M / reference_params.M)
@@ -117,6 +116,18 @@ def get_similar_cartpole_params(reference_params: CartPoleParams, cart_mass: flo
     new_params.gamma = np.power(reference_params.gamma, new_params.dt / reference_params.dt)
 
     return new_params
+
+
+def get_cost_matrices(cartpole_params: CartPoleParams) -> tuple[np.ndarray, np.ndarray]:
+    """Returns the cost matrices Q and R for the given cartpole system."""
+    Q = np.diag([
+        cartpole_params.L11.item()**2,
+        cartpole_params.L22.item()**2,
+        cartpole_params.L33.item()**2,
+        cartpole_params.L44.item()**2,
+    ])
+    R = np.diag([cartpole_params.L55.item()**2])
+    return Q, R 
 
 
 if __name__ == "__main__":
