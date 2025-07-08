@@ -59,7 +59,7 @@ class CartpoleSwingupEnvDimensionless(gym.Env):
         self,
         render_mode: str | None = None,
         cartpole_params: CartPoleParams | None = None,
-        use_acados_integrator: bool = True,
+        use_acados_integrator: bool = False,
     ):
         if cartpole_params is None:
             input("Warning: No parameters provided in the env, using default parameters. Press Enter to continue...")

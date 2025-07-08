@@ -50,7 +50,7 @@ def export_cartpole_model(cartpole_params: CartPoleParams) -> AcadosModel:
     #     - 3 * (m*l) * cos_theta**2
     #     )
 
-    # equations from the original leap-c example:
+    # equations from: https://github.com/acados/acados/blob/main/examples/acados_python/pendulum_on_cart/common/pendulum_model.py
     denominator = m_cart + m - m*cos_theta*cos_theta
     ddx = (-m * l * sin_theta * dtheta * dtheta + m * g * cos_theta * sin_theta + F ) / denominator
     ddtheta = (-m * l * cos_theta * sin_theta * dtheta * dtheta + F * cos_theta + (m_cart + m) * g * sin_theta) / (l * denominator)

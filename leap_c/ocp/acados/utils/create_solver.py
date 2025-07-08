@@ -296,11 +296,13 @@ class AcadosFileManager:
         ocp.code_export_directory = str(self.export_directory / "c_generated_code")
         json_file = str(self.export_directory / "acados_ocp.json")
 
+        print("Setting up an MPC solver...")
         solver = AcadosOcpBatchSolver(
             ocp,
             json_file=json_file,
             N_batch_max=N_batch_max,
             num_threads_in_batch_solve=num_threads_in_batch_methods,
+            verbose=False,
         )
 
         # we add the acados file manager to the solver to ensure
