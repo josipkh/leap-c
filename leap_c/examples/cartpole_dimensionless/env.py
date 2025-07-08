@@ -125,6 +125,7 @@ class CartpoleSwingupEnvDimensionless(gym.Env):
 
         self.integrator = lambda x, u, dt: scipy_step(f_explicit, x, u, dt)
 
+        # state and action bounds
         obs_ub = np.array(
             [
                 self.x_threshold * 2,
@@ -134,14 +135,15 @@ class CartpoleSwingupEnvDimensionless(gym.Env):
             ],
             dtype=np.float32,
         )
+        act_ub = self.Fmax
 
         if dimensionless:
-            act_ub = self.Fmax / (self.masscart * self.gravity)  # scaled action limits
-        else:
-            act_ub = self.Fmax
+            obs_ub = self.Mx_inv @ obs_ub
+            obs_ub[2:] = np.finfo(np.float32).max
+            act_ub = (self.Mu_inv * self.Fmax).item()
 
-        self.action_space = spaces.Box(-act_ub, act_ub, dtype=np.float32)
-        self.observation_space = spaces.Box(-obs_ub, obs_ub, dtype=np.float32)
+        self.action_space = spaces.Box(-np.float32(act_ub), np.float32(act_ub))
+        self.observation_space = spaces.Box(-np.float32(obs_ub), np.float32(obs_ub))
 
         self.reset_needed = True
         self.t = 0
@@ -160,6 +162,7 @@ class CartpoleSwingupEnvDimensionless(gym.Env):
         self.window = None
         self.clock = None
 
+        # helper functions for scaling
         self.dim2nondim_x = lambda x: self.Mx_inv @ x if dimensionless else x
         self.nondim2dim_x = lambda x: self.Mx @ x if dimensionless else x
         self.dim2nondim_u = lambda u: self.Mu_inv @ u if dimensionless else u
@@ -413,12 +416,34 @@ class CartpoleBalanceEnvDimensionless(CartpoleSwingupEnvDimensionless):
     
 
 if __name__ == "__main__":
-    env = CartpoleSwingupEnvDimensionless(cartpole_params=get_default_cartpole_params())
-    obs, info = env.reset(seed=0)
-    print("Initial observation:", obs)
+    from leap_c.examples.cartpole_dimensionless.utils import get_similar_cartpole_params
+
+    # create envs for the default and similar parameters
+    params_ref = get_default_cartpole_params()
+    env_ref = CartpoleSwingupEnvDimensionless(cartpole_params=params_ref)
+
+    cart_mass = 5.0  # [kg] 0.5
+    rod_length = 5.0  # [m] 0.1
+    params_sim = get_similar_cartpole_params(reference_params=params_ref, cart_mass=cart_mass, rod_length=rod_length)
+    env_sim = CartpoleSwingupEnvDimensionless(cartpole_params=params_sim)
+    
+    assert env_ref.action_space == env_sim.action_space
+    assert env_ref.observation_space == env_sim.observation_space
+
+    obs_ref = env_ref.reset(seed=0)[0]
+    obs_sim = env_sim.reset(seed=0)[0]
+    assert np.allclose(obs_ref, obs_sim)
+
+    diffs = []
     for _ in range(10):
-        action = env.action_space.sample()  # Random action
-        obs, reward, done, truncated, info = env.step(action)
-        print(f"Step: obs={obs}, reward={reward}, done={done}, truncated={truncated}")
-    env.close()
-    print("Environment closed.")
+        action = env_ref.action_space.sample()
+        obs_ref, reward_ref, done_ref, truncated_ref, info_ref = env_ref.step(action)
+        obs_sim, reward_sim, done_sim, truncated_sim, info_sim = env_sim.step(action)
+        diffs.append(np.max(np.abs(obs_ref-obs_sim)))
+        # assert np.allclose(obs_ref, obs_sim, atol=1e-04)
+    print(f'max diff: {np.max(diffs)}')
+
+    env_ref.close()
+    env_sim.close()
+
+    print("ok")

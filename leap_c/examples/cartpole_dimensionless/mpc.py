@@ -426,6 +426,7 @@ def export_parametric_ocp(
 if __name__ == "__main__":
     from leap_c.examples.cartpole_dimensionless.utils import get_cost_matrices
 
+    # create MPCs for the default and similar parameters
     learnable_params = ["xref2"]
     reference_params = get_default_cartpole_params()
     reference_mpc = CartpoleMpcDimensionless(params=reference_params, learnable_params=learnable_params, N_horizon=5)
@@ -433,6 +434,8 @@ if __name__ == "__main__":
     rod_length = 5.0  # [m] 0.1
     similar_params = get_similar_cartpole_params(reference_params=reference_params, cart_mass=cart_mass, rod_length=rod_length)
     similar_mpc = CartpoleMpcDimensionless(params=similar_params, learnable_params=learnable_params, N_horizon=5)
+
+    # check the MPC cost and constraints
     if dimensionless:
         assert np.allclose(similar_mpc.ocp.constraints.ubu, reference_mpc.ocp.constraints.ubu)
         assert np.allclose(similar_mpc.ocp.constraints.ubx, reference_mpc.ocp.constraints.ubx)
@@ -445,4 +448,16 @@ if __name__ == "__main__":
 
         assert np.allclose(Mx @ Q @ Mx, mx @ q @ mx)
         assert np.allclose(Mu @ R @ Mu, mu @ r @ mu)
+
+    # compare the solutions for a random initial condition
+    from leap_c.ocp.acados.mpc import MpcInput
+    # x0 = np.array([0.0, np.pi, 0.0, 0.0])  # resting
+    x0 = np.array(np.random.rand(4))  # random state
+    x0 = x0[:,np.newaxis].T  # make it batched
+    mpc_input = MpcInput(x0=x0)
+    reference_mpc_output = reference_mpc(mpc_input=mpc_input)
+    similar_mpc_output = reference_mpc(mpc_input=mpc_input)
+    assert np.allclose(reference_mpc_output[0].u0.item(), similar_mpc_output[0].u0.item())
+    assert np.allclose(reference_mpc_output[0].V.item(), similar_mpc_output[0].V.item())
+    assert np.allclose(reference_mpc_output[0].status.item(), similar_mpc_output[0].status.item())
     print("ok")
