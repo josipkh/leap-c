@@ -4,6 +4,7 @@ from gymnasium import spaces
 from gymnasium.envs.classic_control import utils as gym_utils
 from typing import Optional
 from leap_c.examples.cartpole_dimensionless.config import CartPoleParams, get_default_cartpole_params, dimensionless
+from leap_c.examples.cartpole_dimensionless.model import export_acados_integrator
 from leap_c.examples.cartpole_dimensionless.utils import get_transformation_matrices
 from scipy.integrate import solve_ivp
 
@@ -58,6 +59,7 @@ class CartpoleSwingupEnvDimensionless(gym.Env):
         self,
         render_mode: str | None = None,
         cartpole_params: CartPoleParams | None = None,
+        use_acados_integrator: bool = True,
     ):
         if cartpole_params is None:
             input("Warning: No parameters provided in the env, using default parameters. Press Enter to continue...")
@@ -69,61 +71,54 @@ class CartpoleSwingupEnvDimensionless(gym.Env):
             self.Mu_inv = np.linalg.inv(self.Mu)
             self.Mt_inv = np.linalg.inv(self.Mt)
 
-        self.gravity = cartpole_params.g.item()
-        self.masscart = cartpole_params.M.item()
-        self.masspole = cartpole_params.m.item()
         self.length = cartpole_params.l.item()
         self.Fmax = cartpole_params.Fmax.item()
         self.dt = cartpole_params.dt.item()
         self.max_time = 10.0
         self.x_threshold = 3 * self.length  # this should be physical
 
-        def f_explicit(
-            x,
-            u,
-            g=self.gravity,
-            M=self.masscart,
-            m=self.masspole,
-            l=self.length,  # noqa E741
-        ):
-            _, theta, dx, dtheta = x
-            F = u.item()
-            cos_theta = np.cos(theta)
-            sin_theta = np.sin(theta)
-            denominator = M + m - m * cos_theta * cos_theta
-            return np.array(
-                [
-                    dx,
-                    dtheta,
-                    (
-                        -m * l * sin_theta * dtheta * dtheta
-                        + m * g * cos_theta * sin_theta
-                        + F
-                    )
-                    / denominator,
-                    (
-                        -m * l * cos_theta * sin_theta * dtheta * dtheta
-                        + F * cos_theta
-                        + (M + m) * g * sin_theta
-                    )
-                    / (l * denominator),
-                ]
-            )
-
-        # def rk4_step(f, x, u, h):
-        #     k1 = f(x, u)
-        #     k2 = f(x + 0.5 * h * k1, u)
-        #     k3 = f(x + 0.5 * h * k2, u)
-        #     k4 = f(x + h * k3, u)
-        #     return x + h / 6 * (k1 + 2 * k2 + 2 * k3 + k4)
-        
-        def scipy_step(f, x, u, h):
-            t_span = (0, h)
-            fun = lambda t, y: np.hstack(( f(y[:4], y[4], h), 0.0))
-            sol = solve_ivp(fun, t_span, np.hstack((x,u)), method="RK45")
-            return sol.y[:4,-1]
-
-        self.integrator = lambda x, u, dt: scipy_step(f_explicit, x, u, dt)
+        self.use_acados_integrator = use_acados_integrator
+        if use_acados_integrator:
+            self.integrator = export_acados_integrator(cartpole_params=cartpole_params)
+        else:
+            def f_explicit(
+                x,
+                u,
+                g=cartpole_params.g.item(),
+                M=cartpole_params.M.item(),
+                m=cartpole_params.m.item(),
+                l=self.length,  # noqa E741
+            ):
+                _, theta, dx, dtheta = x
+                F = u.item()
+                cos_theta = np.cos(theta)
+                sin_theta = np.sin(theta)
+                denominator = M + m - m * cos_theta * cos_theta
+                return np.array(
+                    [
+                        dx,
+                        dtheta,
+                        (
+                            -m * l * sin_theta * dtheta * dtheta
+                            + m * g * cos_theta * sin_theta
+                            + F
+                        )
+                        / denominator,
+                        (
+                            -m * l * cos_theta * sin_theta * dtheta * dtheta
+                            + F * cos_theta
+                            + (M + m) * g * sin_theta
+                        )
+                        / (l * denominator),
+                    ]
+                )
+            
+            def scipy_step(f, x, u, h):
+                t_span = (0, h)
+                fun = lambda t, y: np.hstack(( f(y[:4], y[4], h), 0.0))
+                sol = solve_ivp(fun, t_span, np.hstack((x,u)), method="RK45")
+                return sol.y[:4,-1]
+            self.integrator = lambda x, u: scipy_step(f_explicit, x, u, self.dt)
 
         # state and action bounds
         obs_ub = np.array(
@@ -178,7 +173,10 @@ class CartpoleSwingupEnvDimensionless(gym.Env):
         if dimensionless:
             action = self.nondim2dim_u(action)
 
-        self.x = self.integrator(self.x, action, self.dt)
+        if self.use_acados_integrator:
+            self.x = self.integrator.simulate(x=self.x, u=action)
+        else:
+            self.x = self.integrator(x=self.x, u=action)
         self.x_trajectory.append(self.x)  # type: ignore
         self.t += self.dt
         theta = self.x[1]
@@ -235,7 +233,7 @@ class CartpoleSwingupEnvDimensionless(gym.Env):
 
     def init_state(self) -> np.ndarray:
         """The pendulum is hanging down at the start."""
-        return np.array([0.0, np.pi, 0.0, 0.0], dtype=np.float32)
+        return np.array([0.0, np.pi, 0.0, 0.0])
 
     def include_this_state_trajectory_to_rendering(self, state_trajectory: np.ndarray):
         """Meant for setting a state trajectory for rendering.
@@ -417,6 +415,8 @@ class CartpoleBalanceEnvDimensionless(CartpoleSwingupEnvDimensionless):
 
 if __name__ == "__main__":
     from leap_c.examples.cartpole_dimensionless.utils import get_similar_cartpole_params
+    # from leap_c.examples.cartpole_dimensionless.utils import acados_cleanup
+    # acados_cleanup()
 
     # create envs for the default and similar parameters
     params_ref = get_default_cartpole_params()
@@ -425,7 +425,8 @@ if __name__ == "__main__":
     cart_mass = 5.0  # [kg] 0.5
     rod_length = 5.0  # [m] 0.1
     params_sim = get_similar_cartpole_params(reference_params=params_ref, cart_mass=cart_mass, rod_length=rod_length)
-    env_sim = CartpoleSwingupEnvDimensionless(cartpole_params=params_sim)
+    # env_sim = CartpoleSwingupEnvDimensionless(cartpole_params=params_sim)
+    env_sim = CartpoleSwingupEnvDimensionless(cartpole_params=params_ref, use_acados_integrator=True)
     
     assert env_ref.action_space == env_sim.action_space
     assert env_ref.observation_space == env_sim.observation_space
@@ -435,13 +436,45 @@ if __name__ == "__main__":
     assert np.allclose(obs_ref, obs_sim)
 
     diffs = []
+    obs_ref_log = []
+    obs_sim_log = []
+    obs_ref_log.append(obs_ref)
+    obs_sim_log.append(obs_sim)
+    act_log = []
     for _ in range(10):
         action = env_ref.action_space.sample()
         obs_ref, reward_ref, done_ref, truncated_ref, info_ref = env_ref.step(action)
         obs_sim, reward_sim, done_sim, truncated_sim, info_sim = env_sim.step(action)
+
+        obs_ref_log.append(obs_ref)
+        obs_sim_log.append(obs_sim)
         diffs.append(np.max(np.abs(obs_ref-obs_sim)))
+        act_log.append(action)
         # assert np.allclose(obs_ref, obs_sim, atol=1e-04)
     print(f'max diff: {np.max(diffs)}')
+    
+    import matplotlib.pyplot as plt
+    obs_ref_log = np.array(obs_ref_log)
+    obs_sim_log = np.array(obs_sim_log)
+    act_log = np.array(act_log)
+    nx = 4
+    fig, ax = plt.subplots(nx+1, 1, sharex=True)
+    for i in range(nx):
+        ax[i].plot(obs_ref_log[:, i], color="b", label='scipy')
+        ax[i].plot(obs_sim_log[:, i], color="r", linestyle="--", label='acados')
+        ax[i].grid()
+        ax[i].set_ylabel(f'$x_{i}$')
+    ax[0].legend()
+    ax[-1].step(list(range(obs_ref_log.shape[0])), np.append([act_log[0]], act_log), where="post", color="b")
+    ax[-1].set_ylabel('$u$')
+    ax[-1].grid()    
+
+    plt.subplots_adjust(left=None, bottom=None, right=None, top=None, hspace=0.4)
+    fig.align_ylabels(ax)
+    plt.show(block=False)
+    print("Press ENTER to close the plot")
+    input()
+    plt.close()
 
     env_ref.close()
     env_sim.close()
