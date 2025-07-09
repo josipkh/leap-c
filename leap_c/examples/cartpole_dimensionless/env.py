@@ -81,14 +81,12 @@ class CartpoleSwingupEnvDimensionless(gym.Env):
         if use_acados_integrator:
             self.integrator = export_acados_integrator(cartpole_params=cartpole_params)
         else:
-            def f_explicit(
-                x,
-                u,
-                g=cartpole_params.g.item(),
-                M=cartpole_params.M.item(),
-                m=cartpole_params.m.item(),
-                l=self.length,  # noqa E741
-            ):
+            def f_explicit(x, u, cartpole_params):
+                g = cartpole_params.g.item()
+                M = cartpole_params.M.item()
+                m = cartpole_params.m.item()
+                l = cartpole_params.l.item()
+
                 _, theta, dx, dtheta = x
                 F = u.item()
                 cos_theta = np.cos(theta)
@@ -115,7 +113,7 @@ class CartpoleSwingupEnvDimensionless(gym.Env):
             
             def scipy_step(f, x, u, h):
                 t_span = (0, h)
-                fun = lambda t, y: np.hstack(( f(y[:4], y[4], h), 0.0))
+                fun = lambda t, y: np.hstack(( f(x=y[:4], u=y[4], cartpole_params=cartpole_params), 0.0))
                 sol = solve_ivp(fun, t_span, np.hstack((x,u)), method="RK45")
                 return sol.y[:4,-1]
             self.integrator = lambda x, u: scipy_step(f_explicit, x, u, self.dt)
