@@ -19,7 +19,13 @@ def get_transformation_matrices(cartpole_params: CartPoleParams) -> tuple[np.nda
 
 
 def get_similar_cartpole_params(reference_params: CartPoleParams, rod_length: float) -> CartPoleParams:
-    """Returns the parameters of a cartpole system (MDP) dynamically similar to the reference one."""
+    """Returns the parameters of a cartpole system (MDP) dynamically similar to the reference one.
+    
+    Dynamic matching is based on eq. (28) in this paper: https://ieeexplore.ieee.org/document/10178119
+    which contains five parameters: pole length, cart mass, pole mass, cart friction and gravity.
+
+    It is assumed that the friction and gravity cannot be changed.
+    """
     Mx, Mu, _ = get_transformation_matrices(reference_params)
 
     new_params = deepcopy(reference_params)

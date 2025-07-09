@@ -35,6 +35,7 @@ def export_cartpole_model(cartpole_params: CartPoleParams) -> AcadosModel:
     
     # equations from: https://github.com/MPC-Based-Reinforcement-Learning/Safe-RL/blob/experimental/Project/Environments/cartpole.py
     # check also: https://github.com/MPC-Based-Reinforcement-Learning/Safe-RL/blob/akhil/Project/Environments/cartpole.py
+    # NOTE: positive angle is counterclockwise, differs from the paper https://ieeexplore.ieee.org/document/10178119
     # ddx = (
     #     - 2 * (m*l) * (dtheta**2) * sin_theta
     #     + 3 * m * g * sin_theta * cos_theta
@@ -50,10 +51,21 @@ def export_cartpole_model(cartpole_params: CartPoleParams) -> AcadosModel:
     #     - 3 * (m*l) * cos_theta**2
     #     )
 
+    # model from eq. (23)-(24) in https://coneural.org/florian/papers/05_cart_pole.pdf
+    # NOTE: positive angle is clockwise
+    # ddtheta_num = g * sin_theta + cos_theta * ((-F - m * l * dtheta*dtheta * sin_theta) / (m_cart + m))
+    # ddtheta_den = l * (4/3 - (m * cos_theta * cos_theta) / (m_cart + m))
+    # ddtheta = ddtheta_num / ddtheta_den
+    # ddx_num = F + m * l * (dtheta * dtheta * sin_theta - ddtheta * cos_theta)
+    # ddx_den = M + m
+    # ddx = ddx_num / ddx_den
+
     # model from eq. (11) in https://arxiv.org/pdf/1910.13753
+    # NOTE: positive angle is counterclockwise
     denominator = M + m - m*cos_theta*cos_theta
     ddx = (-m * l * sin_theta * dtheta * dtheta + m * g * cos_theta * sin_theta + F ) / denominator
     ddtheta = (-m * l * cos_theta * sin_theta * dtheta * dtheta + F * cos_theta + (M + m) * g * sin_theta) / (l * denominator)
+
     rhs = ca.vertcat(dx, dtheta, ddx, ddtheta)
 
     model = AcadosModel()
