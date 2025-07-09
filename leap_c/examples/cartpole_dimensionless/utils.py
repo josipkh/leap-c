@@ -18,16 +18,29 @@ def get_transformation_matrices(cartpole_params: CartPoleParams) -> tuple[np.nda
     return Mx, Mu, Mt
 
 
-def get_similar_cartpole_params(reference_params: CartPoleParams, cart_mass: float, rod_length: float) -> CartPoleParams:
+def get_similar_cartpole_params(reference_params: CartPoleParams, rod_length: float) -> CartPoleParams:
     """Returns the parameters of a cartpole system (MDP) dynamically similar to the reference one."""
     Mx, Mu, _ = get_transformation_matrices(reference_params)
 
     new_params = deepcopy(reference_params)
-    new_params.M = np.array([cart_mass])
     new_params.l = np.array([rod_length])
 
-    # match the Pi-group(s)
-    new_params.m = reference_params.m * (new_params.M / reference_params.M)
+    # match the pi-groups
+    new_params.M = np.array([reference_params.M.item() * np.sqrt(new_params.l.item() / reference_params.l.item())])  # keep relative friction
+    new_params.m = reference_params.m * (new_params.M / reference_params.M)  # mass ratio
+
+    # check the pi-groups
+    pi_1_ref = reference_params.M.item()/reference_params.m.item()
+    pi_1_sim = new_params.M.item()/new_params.m.item()
+    assert np.allclose(pi_1_ref, pi_1_sim), "Pi-group 1 mismatch"
+
+    M_ref = reference_params.M.item()
+    M_sim = new_params.M.item()
+    l_ref = reference_params.l.item()
+    l_sim = new_params.l.item()
+    pi_2_ref = 1.0/M_ref*np.sqrt(l_ref)
+    pi_2_sim = 1.0/M_sim*np.sqrt(l_sim)
+    assert np.allclose(pi_2_ref, pi_2_sim), "Pi-group 2 mismatch"
 
     # match the cost matrices (just Q and R for now)
     Q, R = get_cost_matrices(reference_params)
@@ -119,6 +132,19 @@ if __name__ == "__main__":
     from leap_c.examples.cartpole_dimensionless.config import get_default_cartpole_params
     params = get_default_cartpole_params()    
     Mx, Mu, Mt = get_transformation_matrices(params)
-    similar_params = get_similar_cartpole_params(reference_params=params, cart_mass=0.5, rod_length=0.1)
-    assert similar_params.M.item()/similar_params.m.item() == params.M.item()/params.m.item(), "Pi-group mismatch"
+    similar_params = get_similar_cartpole_params(reference_params=params, rod_length=0.1)
+
+    # check mass ratio
+    pi_1_ref = params.M.item()/params.m.item()
+    pi_1_sim = similar_params.M.item()/similar_params.m.item()
+    assert np.allclose(pi_1_ref, pi_1_sim), "Pi-group 1 mismatch"
+
+    # check friction
+    M_ref = params.M.item()
+    M_sim = similar_params.M.item()
+    l_ref = params.l.item()
+    l_sim = similar_params.l.item()
+    pi_2_ref = 1.0/M_ref*np.sqrt(l_ref)
+    pi_2_sim = 1.0/M_sim*np.sqrt(l_sim)
+    assert np.allclose(pi_2_ref, pi_2_sim), "Pi-group 2 mismatch" 
     print("ok")

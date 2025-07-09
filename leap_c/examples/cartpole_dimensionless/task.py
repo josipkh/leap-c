@@ -20,10 +20,9 @@ class CartpoleSwingupDimensionless(Task):
     def __init__(self):
         if test_similar:
             reference_params = get_default_cartpole_params()
-            cart_mass = 5.0  # [kg] 0.5
-            rod_length = 5.0  # [m] 0.1
+            rod_length = 5.0  # [m]
             self.params = get_similar_cartpole_params(
-                reference_params=reference_params, cart_mass=cart_mass, rod_length=rod_length
+                reference_params=reference_params, rod_length=rod_length
             )
         else:
             self.params = get_default_cartpole_params()

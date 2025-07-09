@@ -7,11 +7,11 @@ from leap_c.examples.cartpole_dimensionless.config import CartPoleParams
 def export_cartpole_model(cartpole_params: CartPoleParams) -> AcadosModel:
 
     # constants
-    m_cart = cartpole_params.M.item()
+    M = cartpole_params.M.item()
     m = cartpole_params.m.item()
     g = cartpole_params.g.item()
     l = cartpole_params.l.item()
-    mu_f = 0.0  # cartpole_params.mu_f
+    mu_f = cartpole_params.mu_f.item()
 
     # set up states & actions
     x       = ca.SX.sym('x')
@@ -40,20 +40,20 @@ def export_cartpole_model(cartpole_params: CartPoleParams) -> AcadosModel:
     #     + 3 * m * g * sin_theta * cos_theta
     #     + 4 * F
     #     - 4 * mu_f * dx
-    #     ) / (4 * (m+m_cart) - 3 * m * cos_theta**2)
+    #     ) / (4 * (m+M) - 3 * m * cos_theta**2)
     # ddtheta = (
     #     - 3 * (m*l) * (dtheta**2) * sin_theta * cos_theta
-    #     + 6 * (m+m_cart) * g * sin_theta
+    #     + 6 * (m+M) * g * sin_theta
     #     + 6 * (F - mu_f * dx) * cos_theta
     #     ) / (
-    #     + 4 * l * (m+m_cart)
+    #     + 4 * l * (m+M)
     #     - 3 * (m*l) * cos_theta**2
     #     )
 
-    # equations from: https://github.com/acados/acados/blob/main/examples/acados_python/pendulum_on_cart/common/pendulum_model.py
-    denominator = m_cart + m - m*cos_theta*cos_theta
+    # model from eq. (11) in https://arxiv.org/pdf/1910.13753
+    denominator = M + m - m*cos_theta*cos_theta
     ddx = (-m * l * sin_theta * dtheta * dtheta + m * g * cos_theta * sin_theta + F ) / denominator
-    ddtheta = (-m * l * cos_theta * sin_theta * dtheta * dtheta + F * cos_theta + (m_cart + m) * g * sin_theta) / (l * denominator)
+    ddtheta = (-m * l * cos_theta * sin_theta * dtheta * dtheta + F * cos_theta + (M + m) * g * sin_theta) / (l * denominator)
     rhs = ca.vertcat(dx, dtheta, ddx, ddtheta)
 
     model = AcadosModel()
@@ -93,6 +93,12 @@ def export_dimensionless_cartpole_model(cartpole_params: CartPoleParams) -> Acad
     dtheta_hat  = ca.SX.sym('dtheta_hat')
     s_hat = ca.vertcat(x_hat, theta_hat, dx_hat, dtheta_hat)
 
+    dx_hat = ca.SX.sym('dx_hat')
+    dtheta_hat = ca.SX.sym('dtheta_hat')
+    ddx_hat = ca.SX.sym('ddx_hat')
+    ddtheta_hat = ca.SX.sym('ddtheta_hat')
+    ds_hat = ca.vertcat(dx_hat, dtheta_hat, ddx_hat, ddtheta_hat)
+
     F_hat = ca.SX.sym('F_hat')
     a_hat = ca.vertcat(F_hat)
 
@@ -124,6 +130,8 @@ def export_dimensionless_cartpole_model(cartpole_params: CartPoleParams) -> Acad
     model.x = s_hat
     model.u = a_hat
     model.f_expl_expr = f_expl_expr
+    model.f_impl_expr = ds_hat - f_expl_expr
+    model.xdot = ds_hat
     model.name += '_dimensionless'
 
     model.x_labels = [r'$\tilde{x}$ [-]', r'$\tilde{\theta}$ [-]', r'$\dot{\tilde{x}}$ [-]', r'$\dot{\tilde{\theta}}$ [-]']
@@ -151,7 +159,7 @@ def simulate_dimensionless_version(cartpole_params: CartPoleParams) -> tuple[Aca
     # set simulation time
     sim.solver_options.T = dt_hat.item()
     # set options
-    sim.solver_options.integrator_type = 'IRK'
+    sim.solver_options.integrator_type = 'ERK'
     sim.solver_options.num_stages = 4
     sim.solver_options.num_steps = 1
 
@@ -176,9 +184,8 @@ if __name__ == "__main__":
     from leap_c.examples.cartpole_dimensionless.utils import get_similar_cartpole_params
 
     params_ref = get_default_cartpole_params()
-    cart_mass = 5.0  # [kg] 0.5
     rod_length = 5.0  # [m] 0.1
-    params_sim = get_similar_cartpole_params(reference_params=params_ref, cart_mass=cart_mass, rod_length=rod_length)
+    params_sim = get_similar_cartpole_params(reference_params=params_ref, rod_length=rod_length)
 
     # large cartpole
     large_cartpole_sim, large_s_log = simulate_dimensionless_version(cartpole_params=params_ref)

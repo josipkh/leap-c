@@ -415,9 +415,8 @@ if __name__ == "__main__":
     learnable_params = ["xref2"]
     reference_params = get_default_cartpole_params()
     reference_mpc = CartpoleMpcDimensionless(params=reference_params, learnable_params=learnable_params, N_horizon=5)
-    cart_mass = 5.0  # [kg] 0.5
-    rod_length = 5.0  # [m] 0.1
-    similar_params = get_similar_cartpole_params(reference_params=reference_params, cart_mass=cart_mass, rod_length=rod_length)
+    rod_length = 50.0  # [m] 0.1
+    similar_params = get_similar_cartpole_params(reference_params=reference_params, rod_length=rod_length)
     similar_mpc = CartpoleMpcDimensionless(params=similar_params, learnable_params=learnable_params, N_horizon=5)
 
     # check the MPC cost and constraints

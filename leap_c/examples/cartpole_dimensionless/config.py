@@ -12,6 +12,7 @@ class CartPoleParams:
     m: np.ndarray         # mass of the ball [kg]
     g: np.ndarray         # gravity constant [m/s^2]
     l: np.ndarray         # length of the rod [m]
+    mu_f: np.ndarray      # friction coefficient [kg/s]
 
     # Cost matrix factorization parameters, W = L @ L.T
     L11: np.ndarray
@@ -48,6 +49,7 @@ def get_default_cartpole_params() -> CartPoleParams:
         m=np.array([0.1]),
         g=np.array([9.81]),
         l=np.array([0.8]),
+        mu_f=np.array([0.0]),
 
         L11=np.array([np.sqrt(2e3)]),
         L22=np.array([np.sqrt(2e3)]),
@@ -81,6 +83,7 @@ def get_large_cartpole_params() -> CartPoleParams:
         m=np.array([0.5]),
         g=np.array([9.81]),
         l=np.array([0.5]),
+        mu_f=np.array([0.0]),
 
         L11=np.array([np.sqrt(1)]),
         L22=np.array([np.sqrt(1)]),
@@ -114,6 +117,7 @@ def get_small_cartpole_params() -> CartPoleParams:
         m=np.array([0.22]),
         g=np.array([9.81]),
         l=np.array([0.1]),
+        mu_f=np.array([0.0]),
 
         L11=np.array([np.sqrt(2e3)]),
         L22=np.array([np.sqrt(2e3)]),
