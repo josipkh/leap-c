@@ -8,7 +8,7 @@ from leap_c.ocp.acados.layer import MpcSolutionModule
 from leap_c.examples.cartpole_dimensionless.env import CartpoleSwingupEnvDimensionless
 from leap_c.examples.cartpole_dimensionless.mpc import CartpoleMpcDimensionless
 from leap_c.examples.cartpole_dimensionless.config import get_default_cartpole_params, test_similar
-from leap_c.examples.cartpole_dimensionless.utils import convert_dataclass_to_dict, get_similar_cartpole_params
+from leap_c.examples.cartpole_dimensionless.utils import get_similar_cartpole_params
 
 
 @register_task("cartpole_swingup_dimensionless")
@@ -22,13 +22,11 @@ class CartpoleSwingupDimensionless(Task):
             reference_params = get_default_cartpole_params()
             cart_mass = 5.0  # [kg] 0.5
             rod_length = 5.0  # [m] 0.1
-            self.params_dataclass = get_similar_cartpole_params(
+            self.params = get_similar_cartpole_params(
                 reference_params=reference_params, cart_mass=cart_mass, rod_length=rod_length
             )
         else:
-            self.params_dataclass = get_default_cartpole_params()
-
-        params_dict = convert_dataclass_to_dict(self.params_dataclass)
+            self.params = get_default_cartpole_params()
         
         learnable_params = ["xref2"]
         N_horizon = 5  # Number of steps in the MPC horizon
@@ -36,13 +34,13 @@ class CartpoleSwingupDimensionless(Task):
         mpc = CartpoleMpcDimensionless(
             N_horizon=N_horizon,
             learnable_params=learnable_params,
-            params=params_dict,  # type: ignore
+            params=self.params,  # type: ignore
         )
         mpc_layer = MpcSolutionModule(mpc)
         super().__init__(mpc_layer)
 
     def create_env(self, train: bool) -> gym.Env:
-        return CartpoleSwingupEnvDimensionless(cartpole_params=self.params_dataclass)
+        return CartpoleSwingupEnvDimensionless(cartpole_params=self.params)
 
     @property
     def param_space(self) -> gym.spaces.Box | None:

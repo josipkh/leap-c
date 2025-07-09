@@ -2,7 +2,7 @@ import casadi as ca
 import numpy as np
 from acados_template import AcadosModel, AcadosOcp
 from casadi.tools import struct_symSX
-from collections import OrderedDict
+from dataclasses import asdict
 from leap_c.examples.util import (
     assign_lower_triangular,
     find_param_in_p_or_p_global,
@@ -10,12 +10,7 @@ from leap_c.examples.util import (
 )
 from leap_c.ocp.acados.mpc import Mpc
 from leap_c.examples.cartpole_dimensionless.config import CartPoleParams, get_default_cartpole_params, dimensionless
-from leap_c.examples.cartpole_dimensionless.utils import (
-    get_transformation_matrices,
-    convert_dict_to_dataclass,
-    convert_dataclass_to_dict,
-    get_similar_cartpole_params,
-)
+from leap_c.examples.cartpole_dimensionless.utils import get_transformation_matrices, get_similar_cartpole_params
 from copy import deepcopy
 
 # TODO: scale the other cost parameters (c, xref, uref)
@@ -57,7 +52,7 @@ class CartpoleMpcDimensionless(Mpc):
 
     def __init__(
         self,
-        params: dict[str, np.ndarray] | CartPoleParams | None = None,
+        params: CartPoleParams | None = None,
         learnable_params: list[str] | None = None,
         N_horizon: int = 20,
         n_batch: int = 64,
@@ -83,25 +78,15 @@ class CartpoleMpcDimensionless(Mpc):
         """
         params = deepcopy(params)  # to prevent any modification to the input
 
-        if params is None:
-            input("Warning: No parameters provided in the MPC, using default parameters. Press Enter to continue...")
-            params = convert_dataclass_to_dict(get_default_cartpole_params())  # for the rest of the framework
-
-        if not isinstance(params, OrderedDict):
-            if isinstance(params, CartPoleParams):
-                params = convert_dataclass_to_dict(params)
-            else:
-                raise ValueError("The parameters must be an OrderedDict or a CartPoleParams dataclass.")
-
         if dimensionless:
-            Mx, Mu, Mt = get_transformation_matrices(convert_dict_to_dataclass(params))  # x(physical) = Mx * x(dimensionless)
+            Mx, Mu, Mt = get_transformation_matrices(params)  # x(physical) = Mx * x(dimensionless)
             # Mx_inv = np.linalg.inv(Mx)
             Mu_inv = np.linalg.inv(Mu)
             Mt_inv = np.linalg.inv(Mt)
 
-        dt = params["dt"].item()
-        Fmax = params["Fmax"].item()
-        discount_factor = params["gamma"].item()
+        dt = params.dt.item()
+        Fmax = params.Fmax.item()
+        discount_factor = params.gamma.item()
 
         # non-dimensionalize the time
         if dimensionless:
@@ -120,14 +105,14 @@ class CartpoleMpcDimensionless(Mpc):
         if dimensionless:
             Mx_sq_diag = (Mx @ Mx).diagonal()
             Mu_sq_diag = (Mu @ Mu).diagonal()
-            params["L11"] *= Mx_sq_diag[0]
-            params["L22"] *= Mx_sq_diag[1]
-            params["L33"] *= Mx_sq_diag[2]
-            params["L44"] *= Mx_sq_diag[3]
-            params["L55"] *= Mu_sq_diag[0]
+            params.L11 *= Mx_sq_diag[0]
+            params.L22 *= Mx_sq_diag[1]
+            params.L33 *= Mx_sq_diag[2]
+            params.L44 *= Mx_sq_diag[3]
+            params.L55 *= Mu_sq_diag[0]
 
         ocp = export_parametric_ocp(
-            nominal_param=params,
+            nominal_param=asdict(params),
             cost_type=cost_type,
             exact_hess_dyn=exact_hess_dyn,
             name="cartpole_mpc",
