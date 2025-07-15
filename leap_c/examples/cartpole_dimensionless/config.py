@@ -3,7 +3,8 @@ import numpy as np
 
 # global settings, used in several places
 dimensionless = True
-test_similar = False  # if False, use the default cartpole parameters, otherwise use the dynamically similar ones
+test_similar = True  # if False, use the default cartpole parameters, otherwise use the dynamically similar ones
+rod_length = 5.0  # [m]
 
 @dataclass(kw_only=True)
 class CartPoleParams:
@@ -40,6 +41,7 @@ class CartPoleParams:
     Fmax: np.ndarray      # maximum force applied to the cart [N]
     dt: np.ndarray        # time step [s]
     gamma: np.ndarray     # discount factor for the cost function
+    max_time: np.ndarray  # maximum episode length [s]
 
 
 def get_default_cartpole_params() -> CartPoleParams:
@@ -73,6 +75,7 @@ def get_default_cartpole_params() -> CartPoleParams:
         Fmax=np.array([80.0]),
         dt=np.array([0.05]),
         gamma=np.array([0.99]),
+        max_time=np.array([10.0])
     )
 
 

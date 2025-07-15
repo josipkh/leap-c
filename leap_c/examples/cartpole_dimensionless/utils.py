@@ -67,8 +67,9 @@ def get_similar_cartpole_params(reference_params: CartPoleParams, rod_length: fl
     # match the input constraint
     new_params.Fmax = reference_params.Fmax * (new_params.M / reference_params.M)
 
-    # match the sampling time
+    # match the sampling time and maximum episode time
     new_params.dt = reference_params.dt * np.sqrt(new_params.l / reference_params.l)
+    new_params.max_time = reference_params.max_time * np.sqrt(new_params.l / reference_params.l)
 
     # match the discount factor (through the continuous discount rate r = -log(gamma)/dt)
     new_params.gamma = np.power(reference_params.gamma, new_params.dt / reference_params.dt)

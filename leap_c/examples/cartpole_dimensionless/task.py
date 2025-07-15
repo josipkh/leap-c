@@ -7,7 +7,7 @@ from leap_c.ocp.acados.mpc import MpcInput, MpcParameter
 from leap_c.ocp.acados.layer import MpcSolutionModule
 from leap_c.examples.cartpole_dimensionless.env import CartpoleSwingupEnvDimensionless
 from leap_c.examples.cartpole_dimensionless.mpc import CartpoleMpcDimensionless
-from leap_c.examples.cartpole_dimensionless.config import get_default_cartpole_params, test_similar
+from leap_c.examples.cartpole_dimensionless.config import get_default_cartpole_params, test_similar, rod_length
 from leap_c.examples.cartpole_dimensionless.utils import get_similar_cartpole_params
 
 
@@ -20,10 +20,7 @@ class CartpoleSwingupDimensionless(Task):
     def __init__(self):
         if test_similar:
             reference_params = get_default_cartpole_params()
-            rod_length = 5.0  # [m]
-            self.params = get_similar_cartpole_params(
-                reference_params=reference_params, rod_length=rod_length
-            )
+            self.params = get_similar_cartpole_params(reference_params=reference_params, rod_length=rod_length)
         else:
             self.params = get_default_cartpole_params()
         
@@ -58,13 +55,6 @@ class CartpoleSwingupDimensionless(Task):
 
         return MpcInput(x0=obs, parameters=mpc_param)
 
-
-# @register_task("cartpole_balance_dimensionless")
-# class CartpoleBalanceDimensionless(CartpoleSwingupDimensionless):
-#     """The same as CartpoleSwingup, but the starting position of the pendulum is upright, making the task a balancing task."""
-
-#     def create_env(self, train: bool) -> gym.Env:
-#         return CartpoleBalanceEnvDimensionless()
 
 if __name__ == "__main__":
     # comment the @register_task decorator to run this file directly
