@@ -54,6 +54,116 @@ class CartpoleSwingupDimensionless(Task):
         mpc_param = MpcParameter(p_global=param_nn)  # type: ignore
 
         return MpcInput(x0=obs, parameters=mpc_param)
+    
+
+@register_task("cartpole_swingup_dimensionless_default")
+class CartpoleSwingupDimensionlessDefault(Task):
+    def __init__(self):        
+        self.params = get_default_cartpole_params()
+        learnable_params = ["xref2"]
+        N_horizon = 5  # Number of steps in the MPC horizon
+
+        mpc = CartpoleMpcDimensionless(
+            N_horizon=N_horizon,
+            learnable_params=learnable_params,
+            params=self.params,  # type: ignore
+        )
+        mpc_layer = MpcSolutionModule(mpc)
+        super().__init__(mpc_layer)
+    
+    def create_env(self, train: bool) -> gym.Env:
+        return CartpoleSwingupEnvDimensionless(cartpole_params=self.params)
+    
+    @property
+    def param_space(self) -> gym.spaces.Box | None:
+        return gym.spaces.Box(low=-2.0 * torch.pi, high=2.0 * torch.pi, shape=(1,))
+
+    def prepare_mpc_input(
+        self,
+        obs: Any,
+        param_nn: Optional[torch.Tensor] = None,
+        action: Optional[torch.Tensor] = None,
+    ) -> MpcInput:
+        if param_nn is None:
+            raise ValueError("Parameter tensor is required for MPC task.")
+
+        mpc_param = MpcParameter(p_global=param_nn)  # type: ignore
+
+        return MpcInput(x0=obs, parameters=mpc_param)
+    
+
+@register_task("cartpole_swingup_dimensionless_small")
+class CartpoleSwingupDimensionlessSmall(Task):
+    def __init__(self):        
+        default_params = get_default_cartpole_params()
+        self.params = get_similar_cartpole_params(reference_params=default_params, rod_length=0.1)
+        learnable_params = ["xref2"]
+        N_horizon = 5  # Number of steps in the MPC horizon
+
+        mpc = CartpoleMpcDimensionless(
+            N_horizon=N_horizon,
+            learnable_params=learnable_params,
+            params=self.params,  # type: ignore
+        )
+        mpc_layer = MpcSolutionModule(mpc)
+        super().__init__(mpc_layer)
+    
+    def create_env(self, train: bool) -> gym.Env:
+        return CartpoleSwingupEnvDimensionless(cartpole_params=self.params)
+    
+    @property
+    def param_space(self) -> gym.spaces.Box | None:
+        return gym.spaces.Box(low=-2.0 * torch.pi, high=2.0 * torch.pi, shape=(1,))
+
+    def prepare_mpc_input(
+        self,
+        obs: Any,
+        param_nn: Optional[torch.Tensor] = None,
+        action: Optional[torch.Tensor] = None,
+    ) -> MpcInput:
+        if param_nn is None:
+            raise ValueError("Parameter tensor is required for MPC task.")
+
+        mpc_param = MpcParameter(p_global=param_nn)  # type: ignore
+
+        return MpcInput(x0=obs, parameters=mpc_param)
+    
+
+@register_task("cartpole_swingup_dimensionless_large")
+class CartpoleSwingupDimensionlessLarge(Task):
+    def __init__(self):        
+        default_params = get_default_cartpole_params()
+        self.params = get_similar_cartpole_params(reference_params=default_params, rod_length=5.0)
+        learnable_params = ["xref2"]
+        N_horizon = 5  # Number of steps in the MPC horizon
+
+        mpc = CartpoleMpcDimensionless(
+            N_horizon=N_horizon,
+            learnable_params=learnable_params,
+            params=self.params,  # type: ignore
+        )
+        mpc_layer = MpcSolutionModule(mpc)
+        super().__init__(mpc_layer)
+    
+    def create_env(self, train: bool) -> gym.Env:
+        return CartpoleSwingupEnvDimensionless(cartpole_params=self.params)
+    
+    @property
+    def param_space(self) -> gym.spaces.Box | None:
+        return gym.spaces.Box(low=-2.0 * torch.pi, high=2.0 * torch.pi, shape=(1,))
+
+    def prepare_mpc_input(
+        self,
+        obs: Any,
+        param_nn: Optional[torch.Tensor] = None,
+        action: Optional[torch.Tensor] = None,
+    ) -> MpcInput:
+        if param_nn is None:
+            raise ValueError("Parameter tensor is required for MPC task.")
+
+        mpc_param = MpcParameter(p_global=param_nn)  # type: ignore
+
+        return MpcInput(x0=obs, parameters=mpc_param)
 
 
 if __name__ == "__main__":
