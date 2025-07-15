@@ -1,8 +1,6 @@
 import gymnasium as gym
 import numpy as np
 from gymnasium import spaces
-from gymnasium.envs.classic_control import utils as gym_utils
-from typing import Optional
 from leap_c.examples.cartpole_dimensionless.config import CartPoleParams, get_default_cartpole_params, dimensionless
 from leap_c.examples.cartpole_dimensionless.model import export_acados_integrator
 from leap_c.examples.cartpole_dimensionless.utils import get_transformation_matrices

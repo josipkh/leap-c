@@ -3,7 +3,7 @@ import numpy as np
 
 # global settings, used in several places
 dimensionless = True
-test_similar = True  # if False, use the default cartpole parameters, otherwise use the dynamically similar ones
+test_similar = False  # if False, use the default cartpole parameters, otherwise use the dynamically similar ones
 rod_length = 5.0  # [m]
 
 @dataclass(kw_only=True)

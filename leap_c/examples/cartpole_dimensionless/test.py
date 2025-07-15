@@ -5,7 +5,7 @@ from leap_c.run import main
 from leap_c.torch.rl.sac_fop import SacFopBaseConfig
 from leap_c.examples.cartpole_dimensionless.config import dimensionless
 
-keep_output = True  # if False, the output is saved in /tmp/
+keep_output = False  # if False, the output is saved in /tmp/
 
 parser = ArgumentParser()
 task_name = "cartpole_swingup" + ("_dimensionless" if dimensionless else "")
@@ -17,10 +17,12 @@ parser.add_argument("--seed", type=int, default=0)
 args = parser.parse_args()
 
 cfg = SacFopBaseConfig()
-cfg.val.interval = 10_000
-cfg.train.steps = 50_000
+cfg.seed = 0
+cfg.val.interval = 10_000 / 5_000
+cfg.train.steps = 50_000 / 5_000
 cfg.val.num_render_rollouts = 1
 cfg.log.wandb_logger = False
+cfg.log.wandb_init_kwargs = {"name": "test_default"}
 cfg.log.csv_logger = False
 cfg.sac.entropy_reward_bonus = False  # type: ignore
 cfg.sac.update_freq = 4
