@@ -52,7 +52,7 @@ class CartpoleMpcDimensionless(Mpc):
 
     def __init__(
         self,
-        params: CartPoleParams | None = None,
+        cartpole_params: CartPoleParams | None = None,
         learnable_params: list[str] | None = None,
         N_horizon: int = 20,
         n_batch: int = 64,
@@ -76,7 +76,7 @@ class CartpoleMpcDimensionless(Mpc):
             exact_hess_dyn: If False, the contributions of the dynamics will be left out of the Hessian.
             cost_type: The type of cost to use, either "EXTERNAL" or "NONLINEAR_LS".
         """
-        params = deepcopy(params)  # to prevent any modification to the input
+        params = deepcopy(cartpole_params)  # to prevent any modification to the input
 
         if dimensionless:
             Mx, Mu, Mt = get_transformation_matrices(params)  # x(physical) = Mx * x(dimensionless)
@@ -312,10 +312,11 @@ def export_parametric_ocp(
     if dimensionless:
         ocp.model.x_labels = ["x_hat", "theta_hat", "dx_hat", "dtheta_hat"]
         ocp.model.u_labels = ["F_hat"]
-        ocp.model.name += "_dimensionless"
+        ocp.model.t_label = ["t_hat"]
     else:
         ocp.model.x_labels = ["x", "theta", "dx", "dtheta"]
         ocp.model.u_labels = ["F"]
+        ocp.model.t_label = ["t"]
 
     ocp = translate_learnable_param_to_p_global(
         nominal_param=nominal_param,
@@ -370,9 +371,8 @@ def export_parametric_ocp(
     ocp.constraints.idxbx_e = np.array([0])
 
     # scale the slack penalty on the cart position
-    slack_penalty = 1e3
-    if dimensionless:
-        slack_penalty *= nominal_param["l"][0] ** 2
+    # 640.0 corresponds to 1e3 for the default (physical) system
+    slack_penalty = 640.0 / (1.0 if dimensionless else nominal_param["l"][0]**2)
     ocp.constraints.idxsbx = np.array([0])
     ocp.cost.Zu = ocp.cost.Zl = np.array([slack_penalty])
     ocp.cost.zu = ocp.cost.zl = np.array([0.0])
@@ -414,10 +414,10 @@ if __name__ == "__main__":
     # create MPCs for the default and similar parameters
     learnable_params = ["xref2"]
     reference_params = get_default_cartpole_params()
-    reference_mpc = CartpoleMpcDimensionless(params=reference_params, learnable_params=learnable_params, N_horizon=5)
+    reference_mpc = CartpoleMpcDimensionless(cartpole_params=reference_params, learnable_params=learnable_params, N_horizon=5)
     rod_length = 50.0  # [m] 0.1
     similar_params = get_similar_cartpole_params(reference_params=reference_params, rod_length=rod_length)
-    similar_mpc = CartpoleMpcDimensionless(params=similar_params, learnable_params=learnable_params, N_horizon=5)
+    similar_mpc = CartpoleMpcDimensionless(cartpole_params=similar_params, learnable_params=learnable_params, N_horizon=5)
 
     # check the MPC cost and constraints
     if dimensionless:

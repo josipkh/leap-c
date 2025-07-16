@@ -121,8 +121,8 @@ class CartpoleSwingupEnvDimensionless(gym.Env):
             [
                 self.x_threshold * 2,
                 2 * np.pi,
-                np.finfo(np.float32).max,
-                np.finfo(np.float32).max,
+                0.625 * self.length / self.dt,  # corresponds to 10 m/s for the default system
+                0.5 / self.dt,  # corresponds to 10 rad/s for the default system
             ],
             dtype=np.float32,
         )
@@ -130,7 +130,6 @@ class CartpoleSwingupEnvDimensionless(gym.Env):
 
         if dimensionless:
             obs_ub = self.Ms_inv @ obs_ub
-            obs_ub[2:] = np.finfo(np.float32).max  # keep the same limit (infty) for the derivatives
             act_ub = (self.Ma_inv * self.Fmax).item()
 
         self.action_space = spaces.Box(-np.float32(act_ub), np.float32(act_ub))

@@ -30,7 +30,7 @@ class CartpoleSwingupDimensionless(Task):
         mpc = CartpoleMpcDimensionless(
             N_horizon=N_horizon,
             learnable_params=learnable_params,
-            params=self.params,  # type: ignore
+            cartpole_params=self.params,  # type: ignore
         )
         mpc_layer = MpcSolutionModule(mpc)
         super().__init__(mpc_layer)
@@ -66,7 +66,7 @@ class CartpoleSwingupDimensionlessDefault(Task):
         mpc = CartpoleMpcDimensionless(
             N_horizon=N_horizon,
             learnable_params=learnable_params,
-            params=self.params,  # type: ignore
+            cartpole_params=self.params,  # type: ignore
         )
         mpc_layer = MpcSolutionModule(mpc)
         super().__init__(mpc_layer)
@@ -103,7 +103,7 @@ class CartpoleSwingupDimensionlessSmall(Task):
         mpc = CartpoleMpcDimensionless(
             N_horizon=N_horizon,
             learnable_params=learnable_params,
-            params=self.params,  # type: ignore
+            cartpole_params=self.params,  # type: ignore
         )
         mpc_layer = MpcSolutionModule(mpc)
         super().__init__(mpc_layer)
@@ -132,15 +132,14 @@ class CartpoleSwingupDimensionlessSmall(Task):
 @register_task("cartpole_swingup_dimensionless_large")
 class CartpoleSwingupDimensionlessLarge(Task):
     def __init__(self):        
-        default_params = get_default_cartpole_params()
-        self.params = get_similar_cartpole_params(reference_params=default_params, rod_length=5.0)
+        self.params = get_similar_cartpole_params(reference_params=get_default_cartpole_params(), rod_length=5.0)
         learnable_params = ["xref2"]
         N_horizon = 5  # Number of steps in the MPC horizon
 
         mpc = CartpoleMpcDimensionless(
             N_horizon=N_horizon,
             learnable_params=learnable_params,
-            params=self.params,  # type: ignore
+            cartpole_params=self.params,  # type: ignore
         )
         mpc_layer = MpcSolutionModule(mpc)
         super().__init__(mpc_layer)

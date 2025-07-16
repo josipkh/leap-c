@@ -3,7 +3,7 @@ import numpy as np
 
 # global settings, used in several places
 dimensionless = True
-test_similar = False  # if False, use the default cartpole parameters, otherwise use the dynamically similar ones
+test_similar = True  # if False, use the default cartpole parameters, otherwise use the dynamically similar ones
 rod_length = 5.0  # [m]
 
 @dataclass(kw_only=True)
@@ -73,10 +73,10 @@ def get_default_cartpole_params() -> CartPoleParams:
 
         Fmax=np.array([80.0]),
         dt=np.array([0.05]),
-        gamma=np.array([0.99]),
+        gamma=np.array([1.0]),
     )
 
-
+'''
 def get_large_cartpole_params() -> CartPoleParams:
     """Based on the model in https://ieeexplore.ieee.org/document/10178119"""
     return CartPoleParams(
@@ -143,3 +143,4 @@ def get_small_cartpole_params() -> CartPoleParams:
         dt=np.array([0.022]),
         gamma=np.array([0.9539]),
     )
+'''
