@@ -102,14 +102,15 @@ class CartpoleMpcDimensionless(Mpc):
             Fmax_hat = Fmax
 
         # scale the (quadratic) cost matrices
+        # Lii are the roots of the diagonal elements
         if dimensionless:
-            Mx_sq_diag = (Mx @ Mx).diagonal()
-            Mu_sq_diag = (Mu @ Mu).diagonal()
-            params.L11 *= Mx_sq_diag[0]
-            params.L22 *= Mx_sq_diag[1]
-            params.L33 *= Mx_sq_diag[2]
-            params.L44 *= Mx_sq_diag[3]
-            params.L55 *= Mu_sq_diag[0]
+            Mx_diag = Mx.diagonal()
+            Mu_diag = Mu.diagonal()
+            params.L11 *= Mx_diag[0]
+            params.L22 *= Mx_diag[1]
+            params.L33 *= Mx_diag[2]
+            params.L44 *= Mx_diag[3]
+            params.L55 *= Mu_diag[0]
 
         ocp = export_parametric_ocp(
             nominal_param=asdict(params),

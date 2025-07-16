@@ -50,6 +50,7 @@ def get_run_config(run_name):
     cfg.sac.lr_q = 1e-4
     cfg.sac.lr_alpha = 1e-3
     cfg.sac.init_alpha = 0.1
+    cfg.sac.gamma = 1.0
     cfg.log.wandb_init_kwargs = {"name": run_name}
     return cfg
 

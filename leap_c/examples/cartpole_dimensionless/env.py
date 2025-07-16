@@ -116,7 +116,7 @@ class CartpoleSwingupEnvDimensionless(gym.Env):
                 return sol.y[:4,-1]
             self.integrator = lambda s, a: scipy_step(f_explicit, s, a, self.dt)
 
-        # state and action bounds (physical)
+        # state and action bounds
         obs_ub = np.array(
             [
                 self.x_threshold * 2,
