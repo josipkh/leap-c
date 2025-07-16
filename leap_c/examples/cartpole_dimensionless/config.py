@@ -41,7 +41,6 @@ class CartPoleParams:
     Fmax: np.ndarray      # maximum force applied to the cart [N]
     dt: np.ndarray        # time step [s]
     gamma: np.ndarray     # discount factor for the cost function
-    max_time: np.ndarray  # maximum episode length [s]
 
 
 def get_default_cartpole_params() -> CartPoleParams:
@@ -75,7 +74,6 @@ def get_default_cartpole_params() -> CartPoleParams:
         Fmax=np.array([80.0]),
         dt=np.array([0.05]),
         gamma=np.array([0.99]),
-        max_time=np.array([10.0])
     )
 
 

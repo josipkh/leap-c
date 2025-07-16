@@ -72,8 +72,8 @@ class CartpoleSwingupEnvDimensionless(gym.Env):
         self.length = cartpole_params.l.item()
         self.Fmax = cartpole_params.Fmax.item()
         self.dt = cartpole_params.dt.item()
-        self.max_time = cartpole_params.max_time.item()  # different max. episode lengths for varying system size
-        self.x_threshold = 3 * self.length  # this should be physical
+        self.max_episode_length = 200 * self.dt  # [s] episode duration
+        self.x_threshold = 3 * self.length  # [m] cart position
 
         self.use_acados_integrator = use_acados_integrator
         if use_acados_integrator:
@@ -195,7 +195,7 @@ class CartpoleSwingupEnvDimensionless(gym.Env):
         if np.abs(self.s[0]) > self.x_threshold:
             term = True  # Just terminating should be enough punishment when reward is positive
             info = {"task": {"violation": True, "success": False}}
-        if self.t > self.max_time:
+        if self.t > self.max_episode_length:
             # check if the pole is upright in the last 10 steps
             if len(self.s_trajectory) >= 10:
                 success = all(np.abs(self.s_trajectory[i][1]) < 0.1 for i in range(-10, 0))  # TODO: check if 0.1 is a good limit
