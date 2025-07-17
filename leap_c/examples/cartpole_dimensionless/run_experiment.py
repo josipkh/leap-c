@@ -18,11 +18,11 @@ args = parser.parse_args()
 
 cfg = SacFopBaseConfig()
 cfg.seed = 0
-cfg.val.interval = 10_000 / 5_000
-cfg.train.steps = 50_000 / 5_000
+cfg.val.interval = 10_000
+cfg.train.steps = 50_000
 cfg.val.num_render_rollouts = 1
-cfg.log.wandb_logger = False
-cfg.log.wandb_init_kwargs = {"name": "test_default"}
+cfg.log.wandb_logger = True
+cfg.log.wandb_init_kwargs = {"name": "test_2"}
 cfg.log.csv_logger = False
 cfg.sac.entropy_reward_bonus = False  # type: ignore
 cfg.sac.update_freq = 4
@@ -31,6 +31,7 @@ cfg.sac.lr_pi = 1e-4
 cfg.sac.lr_q = 1e-4
 cfg.sac.lr_alpha = 1e-3
 cfg.sac.init_alpha = 0.1
+cfg.sac.gamma = 1.0
 
 # all settings:
 # cfg.train.steps = 50_000

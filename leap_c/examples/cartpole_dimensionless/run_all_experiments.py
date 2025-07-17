@@ -38,8 +38,8 @@ main_output_path = Path(f"{output_root}/{args.task}/{args.trainer}_{args.seed}_{
 def get_run_config(run_name):
     cfg = SacFopBaseConfig()
     cfg.seed = 0
-    cfg.val.interval = 10_000 / 5_000
-    cfg.train.steps = 50_000 / 5_000
+    cfg.val.interval = 10_000
+    cfg.train.steps = 50_000
     cfg.val.num_render_rollouts = 1
     cfg.log.wandb_logger = True
     cfg.log.csv_logger = False
@@ -64,8 +64,10 @@ for k in range(5):
         source = os.path.join(main_output_path, run_names[0])
         shutil.copytree(src=source, dst=output_path)
 
-        # remove the wandb output to initiate a clean run
-        shutil.rmtree(os.path.join(output_path, "wandb"))
+        # if present, remove the wandb output to initiate a clean run
+        wandb_path = Path(os.path.join(output_path, "wandb"))
+        if wandb_path.exists() and wandb_path.is_dir():
+            shutil.rmtree(wandb_path)
 
     main("sac_fop", task, cfg, output_path, "cpu")
 
