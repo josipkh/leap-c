@@ -13,7 +13,7 @@ from leap_c.examples.cartpole_dimensionless.config import CartPoleParams, get_de
 from leap_c.examples.cartpole_dimensionless.utils import get_transformation_matrices, get_similar_cartpole_params
 from copy import deepcopy
 
-# TODO: scale the other cost parameters (c, xref, uref)
+# TODO: scale other cost parameters (c, xref, uref)
 
 
 class CartpoleMpcDimensionless(Mpc):

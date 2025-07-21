@@ -234,12 +234,16 @@ class Trainer(ABC, nn.Module):
 
         train_loop_iter = self.train_loop()
 
+        # initial policy validation
+        val_score = self.validate()
+        self.state.scores.append(val_score)
+
         while self.state.step < self.cfg.train.steps:
             # train
             self.state.step += next(train_loop_iter)
 
             # validate
-            if self.state.step // self.cfg.val.interval > len(self.state.scores):
+            if self.state.step // self.cfg.val.interval > len(self.state.scores) - 1:
                 val_score = self.validate()
                 self.state.scores.append(val_score)
 
