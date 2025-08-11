@@ -36,16 +36,19 @@ def get_similar_cartpole_params(reference_params: CartPoleParams, rod_length: fl
     new_params.m = reference_params.m * (new_params.M / reference_params.M)  # mass ratio
 
     # check the pi-groups
-    pi_1_ref = reference_params.M.item()/reference_params.m.item()
-    pi_1_sim = new_params.M.item()/new_params.m.item()
+    pi_1_ref = reference_params.M.item() / reference_params.m.item()
+    pi_1_sim = new_params.M.item() / new_params.m.item()
     assert np.allclose(pi_1_ref, pi_1_sim), "Pi-group 1 mismatch"
 
     M_ref = reference_params.M.item()
     M_sim = new_params.M.item()
     l_ref = reference_params.l.item()
     l_sim = new_params.l.item()
-    pi_2_ref = 1.0/M_ref*np.sqrt(l_ref)
-    pi_2_sim = 1.0/M_sim*np.sqrt(l_sim)
+    mu_ref = reference_params.mu_f.item()
+    mu_sim = new_params.mu_f.item()
+    g = reference_params.g.item()
+    pi_2_ref = mu_ref / M_ref * np.sqrt(l_ref / g)
+    pi_2_sim = mu_sim / M_sim * np.sqrt(l_sim / g)
     assert np.allclose(pi_2_ref, pi_2_sim), "Pi-group 2 mismatch"
 
     # match the cost matrices (just Q and R for now)
