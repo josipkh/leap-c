@@ -3,7 +3,7 @@ import numpy as np
 
 # global settings, used in several places
 dimensionless = True
-test_similar = True  # if False, use the default cartpole parameters, otherwise use the dynamically similar ones
+test_similar = False  # if False, use the default cartpole parameters, otherwise use the dynamically similar ones
 rod_length = 5.0  # [m]
 
 @dataclass(kw_only=True)
@@ -50,7 +50,7 @@ def get_default_cartpole_params() -> CartPoleParams:
         m=np.array([0.1]),
         g=np.array([9.81]),
         l=np.array([0.8]),
-        mu_f=np.array([0.0]),
+        mu_f=np.array([1.0]),
 
         L11=np.array([np.sqrt(2e3)]),
         L22=np.array([np.sqrt(2e3)]),

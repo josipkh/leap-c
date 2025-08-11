@@ -131,7 +131,7 @@ class CartpoleMpcDimensionless(Mpc):
 
 
 def f_expl_expr(model: AcadosModel) -> ca.SX:
-    p = find_param_in_p_or_p_global(["M", "m", "g", "l"], model)
+    p = find_param_in_p_or_p_global(["M", "m", "g", "l", "mu_f"], model)
 
     M = p["M"]
     m = p["m"]
@@ -147,19 +147,34 @@ def f_expl_expr(model: AcadosModel) -> ca.SX:
     # dynamics
     cos_theta = ca.cos(theta)
     sin_theta = ca.sin(theta)
-    denominator = M + m - m * cos_theta * cos_theta
-    f_expl = ca.vertcat(
-        dx,
-        dtheta,
-        (-m * l * sin_theta * dtheta * dtheta + m * g * cos_theta * sin_theta + F)
-        / denominator,
-        (
-            -m * l * cos_theta * sin_theta * dtheta * dtheta
-            + F * cos_theta
-            + (M + m) * g * sin_theta
+
+    # (model without friction)
+    # denominator = M + m - m * cos_theta * cos_theta
+    # ddx = (-m * l * sin_theta * dtheta * dtheta + m * g * cos_theta * sin_theta + F) / denominator
+    # ddtheta = (
+    #     -m * l * cos_theta * sin_theta * dtheta * dtheta
+    #     + F * cos_theta
+    #     + (M + m) * g * sin_theta
+    #     ) / (l * denominator)
+    
+    # (model with friction)
+    mu_f = p["mu_f"]
+    ddx = (
+        - 2 * (m*l) * (dtheta**2) * sin_theta
+        + 3 * m * g * sin_theta * cos_theta
+        + 4 * F
+        - 4 * mu_f * dx
+        ) / (4 * (m+M) - 3 * m * cos_theta**2)
+    ddtheta = (
+        - 3 * (m*l) * (dtheta**2) * sin_theta * cos_theta
+        + 6 * (m+M) * g * sin_theta
+        + 6 * (F - mu_f * dx) * cos_theta
+        ) / (
+        + 4 * l * (m+M)
+        - 3 * (m*l) * cos_theta**2
         )
-        / (l * denominator),
-    )
+
+    f_expl = ca.vertcat(dx, dtheta, ddx, ddtheta)
 
     # non-dimensionalize the dynamics
     if dimensionless:
@@ -210,7 +225,7 @@ def disc_dyn_expr(model: AcadosModel, dt: float) -> ca.SX:
     u = model.u
 
     # discrete dynamics via RK4
-    p = ca.vertcat(*find_param_in_p_or_p_global(["M", "m", "g", "l"], model).values())
+    p = ca.vertcat(*find_param_in_p_or_p_global(["M", "m", "g", "l", "mu_f"], model).values())
 
     ode = ca.Function("ode", [x, u, p], [f_expl])
     k1 = ode(x, u, p)

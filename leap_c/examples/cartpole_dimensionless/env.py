@@ -84,31 +84,42 @@ class CartpoleSwingupEnvDimensionless(gym.Env):
                 M = cartpole_params.M.item()
                 m = cartpole_params.m.item()
                 l = cartpole_params.l.item()
+                mu_f = cartpole_params.mu_f.item()
 
                 _, theta, dx, dtheta = s
                 F = a.item()
                 cos_theta = np.cos(theta)
                 sin_theta = np.sin(theta)
-                denominator = M + m - m * cos_theta * cos_theta
-                return np.array(
-                    [
-                        dx,
-                        dtheta,
-                        (
-                            -m * l * sin_theta * dtheta * dtheta
-                            + m * g * cos_theta * sin_theta
-                            + F
-                        )
-                        / denominator,
-                        (
-                            -m * l * cos_theta * sin_theta * dtheta * dtheta
-                            + F * cos_theta
-                            + (M + m) * g * sin_theta
-                        )
-                        / (l * denominator),
-                    ]
-                )
-            
+
+                # model without friction
+                # denominator = M + m - m * cos_theta * cos_theta
+                # ddx = (-m * l * sin_theta * dtheta * dtheta
+                #        + m * g * cos_theta * sin_theta
+                #        + F) / denominator
+                # ddtheta = (
+                #           -m * l * cos_theta * sin_theta * dtheta * dtheta
+                #           + F * cos_theta
+                #           + (M + m) * g * sin_theta
+                #         ) / (l * denominator)
+                
+                # model with friction
+                ddx = (
+                    - 2 * (m*l) * (dtheta**2) * sin_theta
+                    + 3 * m * g * sin_theta * cos_theta
+                    + 4 * F
+                    - 4 * mu_f * dx
+                    ) / (4 * (m+M) - 3 * m * cos_theta**2)
+                ddtheta = (
+                    - 3 * (m*l) * (dtheta**2) * sin_theta * cos_theta
+                    + 6 * (m+M) * g * sin_theta
+                    + 6 * (F - mu_f * dx) * cos_theta
+                    ) / (
+                    + 4 * l * (m+M)
+                    - 3 * (m*l) * cos_theta**2
+                    )
+
+                return np.array([dx, dtheta, ddx, ddtheta])
+
             def scipy_step(f, s, a, dt):
                 t_span = (0, dt)
                 fun = lambda _, y: np.hstack(( f(s=y[:4], a=y[4], cartpole_params=cartpole_params), 0.0))
