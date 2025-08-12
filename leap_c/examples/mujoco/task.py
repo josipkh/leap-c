@@ -10,4 +10,3 @@ class HalfCheetahTask(Task):
 
     def create_env(self, train: bool = True) -> gym.Env:
         return gym.make("HalfCheetah-v5")
-

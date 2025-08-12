@@ -631,7 +631,6 @@ class Mpc(ABC):
         )
         warnings.warn(warning_msg, DeprecationWarning)
 
-
         if ocp_sensitivity is None:
             # setup OCP for sensitivity solver
             if (

@@ -82,9 +82,9 @@ def test_MPCSolutionModule_on_PointMassMPC(
             mpc_input=mpc_input,
             mpc_state=None,
         )
-        assert torch.all(
-            torch.isnan(mpc_output.u0)
-        ), "u_star should be nan, since u0 is given."
+        assert torch.all(torch.isnan(mpc_output.u0)), (
+            "u_star should be nan, since u0 is given."
+        )
         return mpc_output.Q, mpc_output.status
 
     torch.autograd.gradcheck(
@@ -132,9 +132,9 @@ def test_MPCSolutionModule_on_PointMassMPC(
             mpc_input=mpc_input,
             mpc_state=None,
         )
-        assert torch.all(
-            torch.isnan(mpc_output.u0)
-        ), "u_star should be nan, since u0 is given."
+        assert torch.all(torch.isnan(mpc_output.u0)), (
+            "u_star should be nan, since u0 is given."
+        )
         return mpc_output.Q, mpc_output.status
 
     torch.autograd.gradcheck(
@@ -151,9 +151,9 @@ def test_MPCSolutionModule_on_PointMassMPC(
             mpc_input=mpc_input,
             mpc_state=None,
         )
-        assert torch.all(
-            torch.isnan(mpc_output.u0)
-        ), "u_star should be nan, since u0 is given."
+        assert torch.all(torch.isnan(mpc_output.u0)), (
+            "u_star should be nan, since u0 is given."
+        )
         return mpc_output.Q, mpc_output.status
 
     torch.autograd.gradcheck(only_dQdu0, u0, atol=1e-2, eps=1e-4, raise_exception=True)
@@ -244,9 +244,9 @@ def test_MPCSolutionModule_on_PendulumOnCart(
             mpc_input=mpc_input,
             mpc_state=None,
         )
-        assert torch.all(
-            torch.isnan(mpc_output.u0)
-        ), "u_star should be nan, since u0 is given."
+        assert torch.all(torch.isnan(mpc_output.u0)), (
+            "u_star should be nan, since u0 is given."
+        )
         return mpc_output.Q, mpc_output.status
 
     torch.autograd.gradcheck(
@@ -294,9 +294,9 @@ def test_MPCSolutionModule_on_PendulumOnCart(
             mpc_input=mpc_input,
             mpc_state=None,
         )
-        assert torch.all(
-            torch.isnan(mpc_output.u0)
-        ), "u_star should be nan, since u0 is given."
+        assert torch.all(torch.isnan(mpc_output.u0)), (
+            "u_star should be nan, since u0 is given."
+        )
         return mpc_output.Q, mpc_output.status
 
     torch.autograd.gradcheck(
@@ -313,9 +313,9 @@ def test_MPCSolutionModule_on_PendulumOnCart(
             mpc_input=mpc_input,
             mpc_state=None,
         )
-        assert torch.all(
-            torch.isnan(mpc_output.u0)
-        ), "u_star should be nan, since u0 is given."
+        assert torch.all(torch.isnan(mpc_output.u0)), (
+            "u_star should be nan, since u0 is given."
+        )
         return mpc_output.Q, mpc_output.status
 
     torch.autograd.gradcheck(only_dQdu0, u0, atol=1e-2, eps=1e-4, raise_exception=True)
@@ -379,9 +379,9 @@ def test_MPCSolutionModule_on_PendulumOnCart_ext_cost(
             mpc_input=mpc_input,
             mpc_state=None,
         )
-        assert np.all(
-            mpc_output.status.cpu().detach().numpy() == 0
-        ), "MPC should converge."
+        assert np.all(mpc_output.status.cpu().detach().numpy() == 0), (
+            "MPC should converge."
+        )
         return mpc_output.u0, mpc_output.status
 
     torch.autograd.gradcheck(
@@ -398,9 +398,9 @@ def test_MPCSolutionModule_on_PendulumOnCart_ext_cost(
             mpc_input=mpc_input,
             mpc_state=None,
         )
-        assert np.all(
-            mpc_output.status.cpu().detach().numpy() == 0
-        ), "MPC should converge."
+        assert np.all(mpc_output.status.cpu().detach().numpy() == 0), (
+            "MPC should converge."
+        )
         return mpc_output.V, mpc_output.status
 
     torch.autograd.gradcheck(
@@ -417,12 +417,12 @@ def test_MPCSolutionModule_on_PendulumOnCart_ext_cost(
             mpc_input=mpc_input,
             mpc_state=None,
         )
-        assert torch.all(
-            torch.isnan(mpc_output.u0)
-        ), "u_star should be nan, since u0 is given."
-        assert np.all(
-            mpc_output.status.cpu().detach().numpy() == 0
-        ), "MPC should converge."
+        assert torch.all(torch.isnan(mpc_output.u0)), (
+            "u_star should be nan, since u0 is given."
+        )
+        assert np.all(mpc_output.status.cpu().detach().numpy() == 0), (
+            "MPC should converge."
+        )
         return mpc_output.Q, mpc_output.status
 
     torch.autograd.gradcheck(
@@ -438,9 +438,9 @@ def test_MPCSolutionModule_on_PendulumOnCart_ext_cost(
             mpc_input=mpc_input,
             mpc_state=None,
         )
-        assert np.all(
-            mpc_output.status.cpu().detach().numpy() == 0
-        ), "MPC should converge."
+        assert np.all(mpc_output.status.cpu().detach().numpy() == 0), (
+            "MPC should converge."
+        )
         return mpc_output.u0, mpc_output.status
 
     torch.autograd.gradcheck(
@@ -456,9 +456,9 @@ def test_MPCSolutionModule_on_PendulumOnCart_ext_cost(
             mpc_input=mpc_input,
             mpc_state=None,
         )
-        assert np.all(
-            mpc_output.status.cpu().detach().numpy() == 0
-        ), "MPC should converge."
+        assert np.all(mpc_output.status.cpu().detach().numpy() == 0), (
+            "MPC should converge."
+        )
         return mpc_output.V, mpc_output.status
 
     # NOTE: A higher tolerance than in the other checks is used here.
@@ -476,12 +476,12 @@ def test_MPCSolutionModule_on_PendulumOnCart_ext_cost(
             mpc_input=mpc_input,
             mpc_state=None,
         )
-        assert torch.all(
-            torch.isnan(mpc_output.u0)
-        ), "u_star should be nan, since u0 is given."
-        assert np.all(
-            mpc_output.status.cpu().detach().numpy() == 0
-        ), "MPC should converge."
+        assert torch.all(torch.isnan(mpc_output.u0)), (
+            "u_star should be nan, since u0 is given."
+        )
+        assert np.all(mpc_output.status.cpu().detach().numpy() == 0), (
+            "MPC should converge."
+        )
         return mpc_output.Q, mpc_output.status
 
     torch.autograd.gradcheck(
@@ -498,12 +498,12 @@ def test_MPCSolutionModule_on_PendulumOnCart_ext_cost(
             mpc_input=mpc_input,
             mpc_state=None,
         )
-        assert torch.all(
-            torch.isnan(mpc_output.u0)
-        ), "u_star should be nan, since u0 is given."
-        assert np.all(
-            mpc_output.status.cpu().detach().numpy() == 0
-        ), "MPC should converge."
+        assert torch.all(torch.isnan(mpc_output.u0)), (
+            "u_star should be nan, since u0 is given."
+        )
+        assert np.all(mpc_output.status.cpu().detach().numpy() == 0), (
+            "MPC should converge."
+        )
         return mpc_output.Q, mpc_output.status
 
     torch.autograd.gradcheck(only_dQdu0, u0, atol=1e-2, eps=1e-4, raise_exception=True)
@@ -562,9 +562,9 @@ def test_MPCSolutionModule_on_ChainCost(
             mpc_input=mpc_input,
             mpc_state=None,
         )
-        assert np.all(
-            mpc_output.status.cpu().detach().numpy() == 0
-        ), "MPC should converge."
+        assert np.all(mpc_output.status.cpu().detach().numpy() == 0), (
+            "MPC should converge."
+        )
         return mpc_output.u0, mpc_output.status
 
     torch.autograd.gradcheck(
@@ -581,9 +581,9 @@ def test_MPCSolutionModule_on_ChainCost(
             mpc_input=mpc_input,
             mpc_state=None,
         )
-        assert np.all(
-            mpc_output.status.cpu().detach().numpy() == 0
-        ), "MPC should converge."
+        assert np.all(mpc_output.status.cpu().detach().numpy() == 0), (
+            "MPC should converge."
+        )
         return mpc_output.V, mpc_output.status
 
     torch.autograd.gradcheck(
@@ -600,12 +600,12 @@ def test_MPCSolutionModule_on_ChainCost(
             mpc_input=mpc_input,
             mpc_state=None,
         )
-        assert torch.all(
-            torch.isnan(mpc_output.u0)
-        ), "u_star should be nan, since u0 is given."
-        assert np.all(
-            mpc_output.status.cpu().detach().numpy() == 0
-        ), "MPC should converge."
+        assert torch.all(torch.isnan(mpc_output.u0)), (
+            "u_star should be nan, since u0 is given."
+        )
+        assert np.all(mpc_output.status.cpu().detach().numpy() == 0), (
+            "MPC should converge."
+        )
         return mpc_output.Q, mpc_output.status
 
     torch.autograd.gradcheck(
@@ -621,9 +621,9 @@ def test_MPCSolutionModule_on_ChainCost(
             mpc_input=mpc_input,
             mpc_state=None,
         )
-        assert np.all(
-            mpc_output.status.cpu().detach().numpy() == 0
-        ), "MPC should converge."
+        assert np.all(mpc_output.status.cpu().detach().numpy() == 0), (
+            "MPC should converge."
+        )
         return mpc_output.u0, mpc_output.status
 
     torch.autograd.gradcheck(
@@ -639,9 +639,9 @@ def test_MPCSolutionModule_on_ChainCost(
             mpc_input=mpc_input,
             mpc_state=None,
         )
-        assert np.all(
-            mpc_output.status.cpu().detach().numpy() == 0
-        ), "MPC should converge."
+        assert np.all(mpc_output.status.cpu().detach().numpy() == 0), (
+            "MPC should converge."
+        )
         return mpc_output.V, mpc_output.status
 
     # NOTE: A higher tolerance than in the other checks is used here.
@@ -659,12 +659,12 @@ def test_MPCSolutionModule_on_ChainCost(
             mpc_input=mpc_input,
             mpc_state=None,
         )
-        assert torch.all(
-            torch.isnan(mpc_output.u0)
-        ), "u_star should be nan, since u0 is given."
-        assert np.all(
-            mpc_output.status.cpu().detach().numpy() == 0
-        ), "MPC should converge."
+        assert torch.all(torch.isnan(mpc_output.u0)), (
+            "u_star should be nan, since u0 is given."
+        )
+        assert np.all(mpc_output.status.cpu().detach().numpy() == 0), (
+            "MPC should converge."
+        )
         return mpc_output.Q, mpc_output.status
 
     torch.autograd.gradcheck(
@@ -681,12 +681,12 @@ def test_MPCSolutionModule_on_ChainCost(
             mpc_input=mpc_input,
             mpc_state=None,
         )
-        assert torch.all(
-            torch.isnan(mpc_output.u0)
-        ), "u_star should be nan, since u0 is given."
-        assert np.all(
-            mpc_output.status.cpu().detach().numpy() == 0
-        ), "MPC should converge."
+        assert torch.all(torch.isnan(mpc_output.u0)), (
+            "u_star should be nan, since u0 is given."
+        )
+        assert np.all(mpc_output.status.cpu().detach().numpy() == 0), (
+            "MPC should converge."
+        )
         return mpc_output.Q, mpc_output.status
 
     torch.autograd.gradcheck(only_dQdu0, u0, atol=1e-2, eps=1e-4, raise_exception=True)

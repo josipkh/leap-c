@@ -1,4 +1,5 @@
 """Main script to run experiments."""
+
 import datetime
 from argparse import ArgumentParser
 from pathlib import Path
@@ -21,11 +22,11 @@ cfg.train.start = 0
 cfg.val.interval = 10000
 cfg.val.num_rollouts = 10
 cfg.val.deterministic = True
-cfg.val.ckpt_modus = 'best'
+cfg.val.ckpt_modus = "best"
 cfg.val.num_render_rollouts = 1
-cfg.val.render_mode = 'rgb_array'
+cfg.val.render_mode = "rgb_array"
 cfg.val.render_deterministic = True
-cfg.val.report_score = 'cum'
+cfg.val.report_score = "cum"
 cfg.log.verbose = True
 cfg.log.interval = 1000
 cfg.log.window = 10000
@@ -35,11 +36,11 @@ cfg.log.wandb_logger = False
 cfg.log.wandb_init_kwargs = {}
 cfg.seed = 0
 cfg.sac.critic_mlp.hidden_dims = (256, 256, 256)
-cfg.sac.critic_mlp.activation = 'relu'
-cfg.sac.critic_mlp.weight_init = 'orthogonal'
+cfg.sac.critic_mlp.activation = "relu"
+cfg.sac.critic_mlp.weight_init = "orthogonal"
 cfg.sac.actor_mlp.hidden_dims = (256, 256, 256)
-cfg.sac.actor_mlp.activation = 'relu'
-cfg.sac.actor_mlp.weight_init = 'orthogonal'
+cfg.sac.actor_mlp.activation = "relu"
+cfg.sac.actor_mlp.weight_init = "orthogonal"
 cfg.sac.batch_size = 64
 cfg.sac.buffer_size = 1000000
 cfg.sac.gamma = 0.99

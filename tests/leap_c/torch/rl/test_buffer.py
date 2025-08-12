@@ -105,7 +105,6 @@ def test_sample_collation_and_dtype_and_device():
         assert np.array_equal(arr, np.ones((2, i + 1), dtype=np.float64))
 
 
-
 def test_sample_order_consistency():
     # NOTE: It should be enough to test preservation of order here for the types
     # for which we have custom rules
@@ -235,4 +234,3 @@ def test_state_dict():
 
     assert len(buffer) == 2
     assert torch.equal(buffer.sample(2), dummy_tensor)
-

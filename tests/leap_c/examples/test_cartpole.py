@@ -151,9 +151,9 @@ def test_closed_loop_rendering(
             frames.append(pendulum_on_cart_ocp_swingup_env.render())
             obs = obs_prime
             count += 1
-        assert (
-            count <= 200
-        ), "max_time and dt dictate that no more than 200 steps should be possible until termination."
+        assert count <= 200, (
+            "max_time and dt dictate that no more than 200 steps should be possible until termination."
+        )
         save_video(
             frames,  # type:ignore
             video_folder=savefile_dir_path,

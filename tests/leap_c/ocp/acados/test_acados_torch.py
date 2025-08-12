@@ -28,7 +28,7 @@ def test_file_management(diff_mpc: AcadosDiffMpc, tol: float = 1e-5) -> None:
 
     Raises:
         AssertionError: If any of the following conditions are not met:
-            - The `c_generated_code` directory does not exist or is not a 
+            - The `c_generated_code` directory does not exist or is not a
                 directory.
             - No `.so` files are found in the `c_generated_code` directory.
             - Reloading the solver modifies the `.so` files beyond the specified
@@ -82,7 +82,7 @@ def test_statelessness(diff_mpc: AcadosDiffMpc) -> None:
 
     This test ensures that:
     1. The layer's output changes when global and stagewise parameters are modified.
-    2. The layer's output remains consistent for identical inputs, confirming 
+    2. The layer's output remains consistent for identical inputs, confirming
         stateless behavior.
 
     Args:
@@ -246,9 +246,7 @@ def test_closed_loop(diff_mpc: AcadosDiffMpc, tol: float = 1e-1) -> None:
         ctx, u0, _, _, _ = diff_mpc.forward(x0=x0, p_global=p_global)  # type: ignore
         assert ctx.status == 0, f"Did not converge to a solution in step {step}"
         u.append(u0)
-        x.append(
-            diff_mpc.diff_mpc_fun.forward_batch_solver.ocp_solvers[0].get(1, "x")
-        )
+        x.append(diff_mpc.diff_mpc_fun.forward_batch_solver.ocp_solvers[0].get(1, "x"))
 
     x = np.array(x)
     u = np.array(u)
@@ -573,9 +571,7 @@ def test_backward(
             forward_func, lambda result: result[4]
         )  # value
 
-    def _create_dQdx0_test(
-        diff_mpc: AcadosDiffMpc, u0: torch.Tensor
-    ) -> Callable:
+    def _create_dQdx0_test(diff_mpc: AcadosDiffMpc, u0: torch.Tensor) -> Callable:
         """Create test function for dQ/dx0 gradient."""
 
         def forward_func(x0):
@@ -597,9 +593,7 @@ def test_backward(
             forward_func, lambda result: result[1]
         )  # u0
 
-    def _create_dVdp_global_test(
-        diff_mpc: AcadosDiffMpc, x0: torch.Tensor
-    ) -> Callable:
+    def _create_dVdp_global_test(diff_mpc: AcadosDiffMpc, x0: torch.Tensor) -> Callable:
         """Create test function for dV/dp_global gradient."""
 
         def forward_func(p_global):

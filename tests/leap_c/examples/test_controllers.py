@@ -77,16 +77,10 @@ def test_chain_controller_matches_mpc():
     learnable_params = ["m", "D", "L", "C", "w"]
     n_mass = 4
 
-    mpc = ChainMpc(
-        learnable_params=learnable_params,
-        n_mass=n_mass
-    )
+    mpc = ChainMpc(learnable_params=learnable_params, n_mass=n_mass)
     mpc_layer = MpcSolutionModule(mpc)
 
-    controller = ChainController(
-        learnable_params=learnable_params,
-        n_mass=n_mass
-    )
+    controller = ChainController(learnable_params=learnable_params, n_mass=n_mass)
 
     # Get default action from both MPC layer and controller
     mpc_layer, ctrl_action = get_default_action(mpc_layer, controller)

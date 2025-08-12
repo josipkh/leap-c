@@ -257,7 +257,7 @@ class Trainer(ABC, nn.Module):
                     self.save()
 
         self.logger.close()
-        
+
         if self.cfg.val.report_score == "cum":
             return sum(self.state.scores)
 

@@ -1,4 +1,5 @@
 """Module for experiments and resurrecting trainers."""
+
 from argparse import ArgumentParser
 import datetime
 from pathlib import Path
@@ -44,7 +45,7 @@ def main(
     cfg: BaseConfig,
     output_path: Path,
     device: str,
-    task = None,
+    task=None,
 ) -> float:
     """Main function to run experiments.
 
@@ -76,7 +77,9 @@ def main(
     trainer = create_trainer(trainer_name, task, output_path, device, cfg)
 
     if continue_run and (output_path / "ckpts").exists():
-        print(f"Resurrecting trainer {trainer_name} for task {task_name} from {output_path}...")
+        print(
+            f"Resurrecting trainer {trainer_name} for task {task_name} from {output_path}..."
+        )
         trainer.load(output_path)
         trainer.state.step = 0  # reset the step counter to continue training
         trainer.state.scores = []  # reset the scores to continue validating
@@ -87,7 +90,7 @@ def main(
         f.write(f"{task_name}\n")
 
     # store git hash and diff
-    log_git_hash_and_diff(output_path / "git.txt") 
+    log_git_hash_and_diff(output_path / "git.txt")
 
     return trainer.run()
 

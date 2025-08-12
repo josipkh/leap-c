@@ -53,15 +53,15 @@ class CartPoleController(ParameterizedController):
     """
 
     def __init__(
-            self,
-            params: CartPoleParams | None = None,
-            learnable_params: list[str] | None = None,
-            N_horizon: int = 20,
-            T_horizon: float = 1.0,
-            Fmax: float = 80.0,
-            discount_factor: float = 0.99,
-            exact_hess_dyn: bool = True,
-            cost_type: str = "NONLINEAR_LS",
+        self,
+        params: CartPoleParams | None = None,
+        learnable_params: list[str] | None = None,
+        N_horizon: int = 20,
+        T_horizon: float = 1.0,
+        Fmax: float = 80.0,
+        discount_factor: float = 0.99,
+        exact_hess_dyn: bool = True,
+        cost_type: str = "NONLINEAR_LS",
     ):
         """
         Args:
@@ -101,7 +101,9 @@ class CartPoleController(ParameterizedController):
     def forward(self, obs, param, ctx=None) -> tuple[Any, torch.Tensor]:
         x0 = torch.as_tensor(obs, dtype=torch.float64)
         p_global = torch.as_tensor(param, dtype=torch.float64)
-        ctx, u0, x, u, value = self.diff_mpc(x0.unsqueeze(0), p_global=p_global.unsqueeze(0), ctx=ctx)
+        ctx, u0, x, u, value = self.diff_mpc(
+            x0.unsqueeze(0), p_global=p_global.unsqueeze(0), ctx=ctx
+        )
         return ctx, u0
 
     def jacobian_action_param(self, ctx) -> np.ndarray:
@@ -113,7 +115,9 @@ class CartPoleController(ParameterizedController):
         raise NotImplementedError
 
     def default_param(self) -> np.ndarray:
-        return np.concatenate([asdict(self.params)[p].flatten() for p in self.learnable_params])
+        return np.concatenate(
+            [asdict(self.params)[p].flatten() for p in self.learnable_params]
+        )
 
 
 def f_expl_expr(model: AcadosModel) -> ca.SX:
@@ -140,9 +144,9 @@ def f_expl_expr(model: AcadosModel) -> ca.SX:
         (-m * l * sin_theta * dtheta * dtheta + m * g * cos_theta * sin_theta + F)
         / denominator,
         (
-                -m * l * cos_theta * sin_theta * dtheta * dtheta
-                + F * cos_theta
-                + (M + m) * g * sin_theta
+            -m * l * cos_theta * sin_theta * dtheta * dtheta
+            + F * cos_theta
+            + (M + m) * g * sin_theta
         )
         / (l * denominator),
     )
@@ -233,15 +237,15 @@ def cost_expr_ext_cost_e(model: AcadosModel) -> ca.SX:
 
 
 def export_parametric_ocp(
-        nominal_param: dict[str, np.ndarray],
-        cost_type: str = "NONLINEAR_LS",
-        exact_hess_dyn: bool = True,
-        name: str = "cartpole",
-        learnable_param: list[str] | None = None,
-        Fmax: float = 80.0,
-        N_horizon: int = 50,
-        tf: float = 2.0,
-        sensitivity_ocp=False,
+    nominal_param: dict[str, np.ndarray],
+    cost_type: str = "NONLINEAR_LS",
+    exact_hess_dyn: bool = True,
+    name: str = "cartpole",
+    learnable_param: list[str] | None = None,
+    Fmax: float = 80.0,
+    N_horizon: int = 50,
+    tf: float = 2.0,
+    sensitivity_ocp=False,
 ) -> AcadosOcp:
     ocp = AcadosOcp()
 

@@ -10,7 +10,10 @@ from dataclasses import asdict
 from acados_template import AcadosOcp
 from leap_c.controller import ParameterizedController
 from leap_c.examples.pointmass.env import _A_disc, _B_disc
-from leap_c.examples.pointmass.config import PointMassParams, make_default_pointmass_params
+from leap_c.examples.pointmass.config import (
+    PointMassParams,
+    make_default_pointmass_params,
+)
 from leap_c.examples.util import (
     find_param_in_p_or_p_global,
     translate_learnable_param_to_p_global,
@@ -20,12 +23,13 @@ from leap_c.ocp.acados.torch import AcadosDiffMpc
 
 class PointMassController(ParameterizedController):
     """docstring for PointMassController."""
+
     def __init__(
-            self,
-            params: PointMassParams | None = None,
-            learnable_params: list[str] | None = None,
-            N_horizon: int = 20,
-            T_horizon: float = 2.0,
+        self,
+        params: PointMassParams | None = None,
+        learnable_params: list[str] | None = None,
+        N_horizon: int = 20,
+        T_horizon: float = 2.0,
     ) -> None:
         super().__init__()
         self.params = make_default_pointmass_params() if params is None else params
@@ -44,7 +48,9 @@ class PointMassController(ParameterizedController):
     def forward(self, obs, param, ctx=None) -> tuple[Any, torch.Tensor]:
         x0 = torch.as_tensor(obs, dtype=torch.float64)
         p_global = torch.as_tensor(param, dtype=torch.float64)
-        ctx, u0, x, u, value = self.acados_layer(x0.unsqueeze(0), p_global=p_global.unsqueeze(0), ctx=ctx)
+        ctx, u0, x, u, value = self.acados_layer(
+            x0.unsqueeze(0), p_global=p_global.unsqueeze(0), ctx=ctx
+        )
         return ctx, u0
 
     def jacobian_action_param(self, ctx) -> np.ndarray:
@@ -56,11 +62,13 @@ class PointMassController(ParameterizedController):
         raise NotImplementedError
 
     def default_param(self) -> np.ndarray:
-        return np.concatenate([np.array(asdict(self.params)[p]).flatten() for p in self.learnable_params])
+        return np.concatenate(
+            [np.array(asdict(self.params)[p]).flatten() for p in self.learnable_params]
+        )
 
 
 def _create_diag_matrix(
-        _q_sqrt: np.ndarray | ca.SX,
+    _q_sqrt: np.ndarray | ca.SX,
 ) -> np.ndarray | ca.SX:
     if any(isinstance(i, ca.SX) for i in [_q_sqrt]):
         return ca.diag(_q_sqrt)
@@ -68,7 +76,7 @@ def _create_diag_matrix(
 
 
 def _disc_dyn_expr(
-        ocp: AcadosOcp,
+    ocp: AcadosOcp,
 ) -> ca.SX:
     x = ocp.model.x
     u = ocp.model.u
@@ -99,8 +107,8 @@ def _cost_expr_ext_cost(ocp: AcadosOcp) -> ca.SX:
     uref = find_param_in_p_or_p_global(["uref"], ocp.model)["uref"]
 
     return 0.5 * (
-            ca.mtimes([ca.transpose(x - xref), Q_sqrt.T, Q_sqrt, x - xref])
-            + ca.mtimes([ca.transpose(u - uref), R_sqrt.T, R_sqrt, u - uref])
+        ca.mtimes([ca.transpose(x - xref), Q_sqrt.T, Q_sqrt, x - xref])
+        + ca.mtimes([ca.transpose(u - uref), R_sqrt.T, R_sqrt, u - uref])
     )
 
 
@@ -117,12 +125,12 @@ def _cost_expr_ext_cost_e(ocp: AcadosOcp) -> ca.SX:
 
 
 def export_parametric_ocp(
-        nominal_param: dict[str, np.ndarray | float],
-        name: str = "pointmass",
-        learnable_params: list[str] | None = None,
-        N_horizon: int = 50,
-        tf: float = 2.0,
-        x0: np.ndarray | None = None,
+    nominal_param: dict[str, np.ndarray | float],
+    name: str = "pointmass",
+    learnable_params: list[str] | None = None,
+    N_horizon: int = 50,
+    tf: float = 2.0,
+    x0: np.ndarray | None = None,
 ) -> AcadosOcp:
     ocp = AcadosOcp()
 

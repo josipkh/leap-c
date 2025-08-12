@@ -9,7 +9,13 @@ import torch
 from torch import autograd as autograd, nn as nn
 
 from acados_template import AcadosSimSolver
-from leap_c.ocp.acados.mpc import Mpc, MpcParameter, MpcBatchedState, MpcInput, MpcOutput
+from leap_c.ocp.acados.mpc import (
+    Mpc,
+    MpcParameter,
+    MpcBatchedState,
+    MpcInput,
+    MpcOutput,
+)
 
 
 @dataclass
@@ -170,7 +176,6 @@ class MPCSolutionFunction(autograd.Function):
 
         # grad_p = grad_p / ratios.unsqueeze(-1)
 
-
         # print("After: Grad p min", grad_p.min(), "Grad p max", grad_p.max())
 
         return (None, grad_x, grad_u, grad_p, None, None, None)
@@ -276,7 +281,9 @@ class MpcSolutionModule(nn.Module):
         )
 
         if ctx.dudp_global is not None:
-            dudp_global = torch.tensor(ctx.dudp_global, device=u0.device, dtype=u0.dtype)
+            dudp_global = torch.tensor(
+                ctx.dudp_global, device=u0.device, dtype=u0.dtype
+            )
         else:
             dudp_global = None
 

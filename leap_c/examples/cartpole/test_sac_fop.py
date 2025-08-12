@@ -1,4 +1,5 @@
 """Main script to run experiments."""
+
 import datetime
 from argparse import ArgumentParser
 from pathlib import Path
@@ -29,6 +30,8 @@ cfg.sac.lr_alpha = 1e-3
 cfg.sac.init_alpha = 0.1
 
 
-output_path = Path(f"/tmp/cartpole/sac_fop_{args.seed}_{datetime.datetime.now().strftime('%Y%m%d%H%M%S')}")
+output_path = Path(
+    f"/tmp/cartpole/sac_fop_{args.seed}_{datetime.datetime.now().strftime('%Y%m%d%H%M%S')}"
+)
 
 main("sac_fop", "cartpole_swingup", cfg, output_path, args.device)

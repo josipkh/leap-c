@@ -24,6 +24,7 @@ from leap_c.trainer import Trainer
 
 NUM_THREADS_ACADOS_BATCH = 4
 
+
 @dataclass(kw_only=True)
 class SacFopBaseConfig(SacBaseConfig):
     """Specific settings for the Fop trainer."""
@@ -180,7 +181,9 @@ class FouActor(nn.Module):
         mpc_output, state_solution, _ = self.mpc(mpc_input, mpc_state)
 
         action_mpc = mpc_output.u0
-        action_unbounded = self.action_transform.inverse(action_mpc.detach(), padding=0.1)
+        action_unbounded = self.action_transform.inverse(
+            action_mpc.detach(), padding=0.1
+        )
         action_unbounded = self.action_transform.inverse(
             action_mpc.detach(), padding=0.1
         )
@@ -227,7 +230,12 @@ class SacFopTrainer(Trainer):
         self.q_optim = torch.optim.Adam(self.q.parameters(), lr=cfg.sac.lr_q)
 
         if cfg.noise == "param":
-            self.pi = FopActor(task, self.train_env, cfg.sac.actor_mlp, correction=cfg.entropy_correction)
+            self.pi = FopActor(
+                task,
+                self.train_env,
+                cfg.sac.actor_mlp,
+                correction=cfg.entropy_correction,
+            )
             self.pi = FopActor(
                 task,
                 self.train_env,
@@ -282,7 +290,9 @@ class SacFopTrainer(Trainer):
                 action = pi_output.action.cpu().numpy()[0]
                 param = pi_output.param.cpu().numpy()[0]
 
-            self.report_stats("train_trajectory", {"param": param, "action": action}, verbose=True)
+            self.report_stats(
+                "train_trajectory", {"param": param, "action": action}, verbose=True
+            )
             self.report_stats("train_policy_rollout", pi_output.stats, verbose=True)  # type: ignore
 
             obs_prime, reward, is_terminated, is_truncated, info = self.train_env.step(
@@ -393,7 +403,7 @@ class SacFopTrainer(Trainer):
                     "q_target": target.mean().item(),
                     "masked_samples_perc": 1 - mask_status.float().mean().item(),
                     "entropy": -log_p.mean().item(),
-                    }
+                }
                 self.report_stats("loss", loss_stats)
                 self.report_stats("train_policy_update", pi_o_stats, verbose=True)
 

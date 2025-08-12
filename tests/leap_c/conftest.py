@@ -291,8 +291,6 @@ def pendulum_on_cart_ext_cost_p_global(
     )
 
 
-
-
 @pytest.fixture(scope="session")
 def rng() -> np.random.Generator:
     """Fixture for a random number generator."""
@@ -313,4 +311,3 @@ def trainer(request, task):
         trainer = create_trainer(request.param, task, tmpdir, "cpu", cfg)
 
         yield trainer
-

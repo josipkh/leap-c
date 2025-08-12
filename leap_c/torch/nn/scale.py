@@ -5,7 +5,6 @@ import torch.autograd as autograd
 from gymnasium import spaces
 
 
-
 class MinMaxStraightThroughFunction(autograd.Function):
     @staticmethod
     def forward(ctx, x: torch.Tensor, space: spaces.Box) -> torch.Tensor:

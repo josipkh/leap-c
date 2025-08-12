@@ -1,4 +1,5 @@
 """Provides functions to resurrect a trainer, task or cfg from a previous run."""
+
 from pathlib import Path
 
 import yaml
@@ -72,4 +73,3 @@ def resurrect_trainer(path: Path, device="cpu") -> Trainer:
     trainer.load(path)
 
     return trainer
-

@@ -12,6 +12,7 @@ def _to_tensor(data, device, dtype=torch.float32):
         return tuple(_to_tensor(item, device, dtype) for item in data)
     return torch.tensor(data, device=device, dtype=dtype)
 
+
 def _add_none(data):
     if isinstance(data, tuple):
         return None, *data

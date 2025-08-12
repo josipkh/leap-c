@@ -50,7 +50,6 @@ def solve_with_retry(
     batch_status = np.array([solver.status for solver in active_solvers])
 
     if with_retry and any(status != 0 for status in batch_status):
-
         for idx, solver in enumerate(active_solvers):
             if batch_status[idx] == 0:
                 continue

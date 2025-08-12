@@ -26,7 +26,10 @@ from leap_c.examples.util import (
     translate_learnable_param_to_p_global,
 )
 from leap_c.ocp.acados.data import AcadosOcpSolverInput
-from leap_c.ocp.acados.initializer import AcadosDiffMpcInitializer, create_zero_iterate_from_ocp
+from leap_c.ocp.acados.initializer import (
+    AcadosDiffMpcInitializer,
+    create_zero_iterate_from_ocp,
+)
 from leap_c.ocp.acados.torch import AcadosDiffMpc
 
 
@@ -133,7 +136,10 @@ def export_parametric_ocp(
     p = find_param_in_p_or_p_global(["D", "L", "C", "m", "w"], ocp.model)
 
     ocp.model.f_expl_expr = get_f_expl_expr(
-        x=ocp.model.x, u=ocp.model.u, p=p, x0=fix_point  # type:ignore
+        x=ocp.model.x,
+        u=ocp.model.u,
+        p=p,
+        x0=fix_point,  # type:ignore
     )
     ocp.model.f_impl_expr = ocp.model.xdot - ocp.model.f_expl_expr
     ocp.model.disc_dyn_expr = get_disc_dyn_expr(ocp.model, tf / N_horizon)
@@ -310,7 +316,6 @@ class ChainInitializer(AcadosDiffMpcInitializer):
         fix_point: np.ndarray = np.zeros(3),
         pos_last_mass_ref: np.ndarray = np.array([1.0, 0.0, 0.0]),
     ):
-
         resting_chain_solver = RestingChainSolver(
             n_mass=n_mass, fix_point=fix_point, f_expl=get_f_expl_expr
         )

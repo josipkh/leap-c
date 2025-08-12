@@ -27,12 +27,10 @@ def make_default_pointmass_params() -> PointMassParams:
         m=1.0,
         cx=0.1,
         cy=0.1,
-
         # Cost function parameters
         q_diag=np.array([1.0, 1.0, 1.0, 1.0]),
         r_diag=np.array([0.1, 0.1]),
         q_diag_e=np.array([1.0, 1.0, 1.0, 1.0]),
-
         # Reference parameters
         xref=np.array([0.0, 0.0, 0.0, 0.0]),
         uref=np.array([0.0, 0.0]),

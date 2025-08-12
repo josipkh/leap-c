@@ -270,13 +270,13 @@ def cost_expr_ext_cost_e(model: AcadosModel) -> ca.SX:
 
 def export_parametric_ocp(
     nominal_param: dict[str, np.ndarray],
-    cost_type: str,# = "NONLINEAR_LS",
-    exact_hess_dyn: bool,# = True,
-    name: str,# = "cartpole",
-    learnable_param: list[str] | None,# = None,
-    Fmax: float,# = 80.0,
-    N_horizon: int,# = 50,
-    tf: float,# = 2.0,
+    cost_type: str,  # = "NONLINEAR_LS",
+    exact_hess_dyn: bool,  # = True,
+    name: str,  # = "cartpole",
+    learnable_param: list[str] | None,  # = None,
+    Fmax: float,  # = 80.0,
+    N_horizon: int,  # = 50,
+    tf: float,  # = 2.0,
 ) -> AcadosOcp:
     ocp = AcadosOcp()
 
@@ -374,4 +374,4 @@ def export_parametric_ocp(
 
 
 if __name__ == "__main__":
-    mpc = CartPoleMPC(learnable_params = ["xref2"])
+    mpc = CartPoleMPC(learnable_params=["xref2"])

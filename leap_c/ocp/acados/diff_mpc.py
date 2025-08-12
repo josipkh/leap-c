@@ -10,7 +10,10 @@ from acados_template.acados_ocp_iterate import AcadosOcpFlattenedBatchIterate
 
 from leap_c.autograd.function import DiffFunction
 from leap_c.ocp.acados.data import AcadosOcpSolverInput
-from leap_c.ocp.acados.initializer import AcadosDiffMpcInitializer, ZeroDiffMpcInitializer
+from leap_c.ocp.acados.initializer import (
+    AcadosDiffMpcInitializer,
+    ZeroDiffMpcInitializer,
+)
 from leap_c.ocp.acados.utils.create_solver import create_forward_backward_batch_solvers
 from leap_c.ocp.acados.utils.prepare_solver import prepare_batch_solver_for_backward
 from leap_c.ocp.acados.utils.solve import solve_with_retry
@@ -29,6 +32,7 @@ class AcadosDiffMpcCtx:
     for the backward pass and to calculate the sensitivities. It also contains
     fields for caching the sensitivity calculations.
     """
+
     iterate: AcadosOcpFlattenedBatchIterate
     status: np.ndarray
     log: dict[str, float]
@@ -241,7 +245,9 @@ class AcadosDiffMpcFunction(DiffFunction):
 
         return grad_x0, grad_u0, grad_p_global, None, None
 
-    def sensitivity(self, ctx: AcadosDiffMpcCtx, field_name: AcadosDiffMpcSensitivityOptions) -> np.ndarray:
+    def sensitivity(
+        self, ctx: AcadosDiffMpcCtx, field_name: AcadosDiffMpcSensitivityOptions
+    ) -> np.ndarray:
         """
         Calculate a specific sensitivity field for a context.
 
