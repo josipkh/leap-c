@@ -44,6 +44,7 @@ def main(
     cfg: BaseConfig,
     output_path: Path,
     device: str,
+    task = None,
 ) -> float:
     """Main function to run experiments.
 
@@ -61,7 +62,8 @@ def main(
     """
     continue_run = output_path.exists()
 
-    task = create_task(task_name)
+    if task == None:
+        task = create_task(task_name)
 
     print_inputs(
         trainer_name=trainer_name,
