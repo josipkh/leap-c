@@ -1,28 +1,40 @@
 import datetime
-from argparse import ArgumentParser
 from pathlib import Path
 from leap_c.run import main
 from leap_c.torch.rl.sac_fop import SacFopBaseConfig
-from leap_c.examples.cartpole_dimensionless.config import dimensionless
+from leap_c.examples.cartpole_dimensionless.task import CartpoleSwingupDimensionless
+from leap_c.examples.cartpole_dimensionless.config import get_default_cartpole_params
+from leap_c.examples.cartpole_dimensionless.utils import get_similar_cartpole_params
 
 keep_output = False  # if False, the output is saved in /tmp/
+dimensionless = True
 
-parser = ArgumentParser()
+trainer_name = "sac_fop"
 task_name = "cartpole_swingup" + ("_dimensionless" if dimensionless else "")
-parser.add_argument("--task", type=str, default=task_name)
-parser.add_argument("--trainer", type=str, default="sac_fop")
-parser.add_argument("--output_path", type=Path, default=None)
-parser.add_argument("--device", type=str, default="cpu")
-parser.add_argument("--seed", type=int, default=0)
-args = parser.parse_args()
+device = "cpu"
+task = CartpoleSwingupDimensionless(
+    mpc_params=get_default_cartpole_params(),
+    env_params=get_similar_cartpole_params(
+        reference_params=get_default_cartpole_params(),
+        rod_length=5.0,
+    ),
+)
+seed = 0
+
+output_root = "output" if keep_output else "/tmp"
+time_str = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
+output_path = Path(f"{output_root}/{task_name}/{trainer_name}_{seed}_{time_str}")
+
+# for testing transfer learning, set the output path to an existing directory
+# output_path = Path("/home/josip/leap-c/output/cartpole_swingup_dimensionless/sac_fop_0_20250704102054_transfer_2")
 
 cfg = SacFopBaseConfig()
-cfg.seed = 0
+cfg.seed = seed
 cfg.val.interval = 10_000
 cfg.train.steps = 50_000
 cfg.val.num_render_rollouts = 1
 cfg.log.wandb_logger = True
-cfg.log.wandb_init_kwargs = {"name": "test_2"}
+cfg.log.wandb_init_kwargs = {"name": "test"}
 cfg.log.csv_logger = False
 cfg.sac.entropy_reward_bonus = False  # type: ignore
 cfg.sac.update_freq = 4
@@ -74,11 +86,4 @@ cfg.sac.gamma = 1.0
 # cfg.sac.update_freq = 4
 # cfg.noise = "param"
 
-output_root = "output" if keep_output else "/tmp"
-time_str = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
-output_path = Path(f"{output_root}/{args.task}/{args.trainer}_{args.seed}_{time_str}")
-
-# for testing transfer learning, set the output path to an existing directory
-# output_path = Path("/home/josip/leap-c/output/cartpole_swingup_dimensionless/sac_fop_0_20250704102054_transfer_2")
-
-main(args.trainer, args.task, cfg, output_path, args.device)
+main(trainer_name, task_name, cfg, output_path, device, task)

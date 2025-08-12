@@ -3,6 +3,9 @@ from copy import deepcopy
 from leap_c.examples.cartpole_dimensionless.config import CartPoleParams
 import os
 import shutil
+import pandas as pd
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_pdf import PdfPages
 
 
 def get_transformation_matrices(
@@ -47,20 +50,10 @@ def get_similar_cartpole_params(
     )  # mass ratio
 
     # check the pi-groups
-    pi_1_ref = reference_params.M.item() / reference_params.m.item()
-    pi_1_sim = new_params.M.item() / new_params.m.item()
+    pi_1_ref, pi_2_ref = get_pi_groups(reference_params)
+    pi_1_sim, pi_2_sim = get_pi_groups(new_params)
     assert np.allclose(pi_1_ref, pi_1_sim), "Pi-group 1 mismatch"
-
-    M_ref = reference_params.M.item()
-    M_sim = new_params.M.item()
-    l_ref = reference_params.l.item()
-    l_sim = new_params.l.item()
-    mu_ref = reference_params.mu_f.item()
-    mu_sim = new_params.mu_f.item()
-    g = reference_params.g.item()
-    pi_2_ref = mu_ref / M_ref * np.sqrt(l_ref / g)
-    pi_2_sim = mu_sim / M_sim * np.sqrt(l_sim / g)
-    assert np.allclose(pi_2_ref, pi_2_sim), "Pi-group 2 mismatch"
+    assert np.allclose(pi_2_ref, pi_2_sim), "Pi-group 2 mismatch"    
 
     # match the cost matrices (just Q and R for now)
     Q, R = get_cost_matrices(reference_params)
@@ -109,6 +102,20 @@ def get_cost_matrices(cartpole_params: CartPoleParams) -> tuple[np.ndarray, np.n
     return Q, R
 
 
+def get_pi_groups(cartpole_params: CartPoleParams) -> tuple[float, float]:
+    """Returns the pi-groups for the given cartpole system."""
+    M = cartpole_params.M.item()
+    m = cartpole_params.m.item()
+    l = cartpole_params.l.item()
+    mu_f = cartpole_params.mu_f.item()
+    g = cartpole_params.g.item()
+
+    pi_1 = M / m
+    pi_2 = mu_f / M * np.sqrt(l / g)
+
+    return pi_1, pi_2
+
+
 def acados_cleanup(path="."):
     files_to_delete = ["acados_sim.json", "acados_ocp.json"]
     folder_to_delete = "c_generated_code"
@@ -155,6 +162,59 @@ def acados_cleanup(path="."):
             print(f"Error deleting {item}: {e}")
 
 
+def plot_results(main_folder, cfg, plot_std=False):
+    """Plots the experiment results averaged over the seeds."""
+
+    experiments = ['default', 'small', 'large', 'transfer_small', 'transfer_large']
+    seeds = ['0', '1', '2', '3', '4']
+    metric = 'score'
+    output_file = os.path.join(main_folder, 'results.pdf')
+
+    # Collect data
+    experiment_results = {}
+
+    for exp in experiments:
+        seed_dfs = []
+        for seed in seeds:
+            file_path = os.path.join(main_folder, exp, seed, 'val_log.csv')
+            if os.path.exists(file_path):
+                df = pd.read_csv(file_path, index_col=0)
+                seed_dfs.append(df)
+            else:
+                print(f"Warning: Missing file {file_path}")
+        if seed_dfs:
+            # Stack into 3D array for mean/std
+            combined = pd.concat(seed_dfs, axis=0, keys=range(len(seed_dfs)))
+            mean_df = combined.groupby(level=1).mean()
+            std_df = combined.groupby(level=1).std()
+            experiment_results[exp] = {'mean': mean_df, 'std': std_df}
+        else:
+            print(f"Warning: No valid seed logs found for {exp}")
+
+    # Plotting
+    plt.figure(figsize=(10, 6))
+    for exp_name, data in experiment_results.items():
+        if metric in data['mean'].columns:
+            steps = data['mean'].index * cfg.val.interval
+            mean_values = data['mean'][metric]
+            plt.plot(steps, mean_values, label=exp_name)
+            if plot_std:
+                std_values = data['std'][metric]
+                plt.fill_between(steps, mean_values - std_values, mean_values + std_values, alpha=0.2)
+
+    # plt.title(f'Metric: {metric}')
+    plt.xlabel("Number of samples")
+    plt.ylabel("Validation score")
+    plt.legend()
+    plt.grid(True)
+    plt.tight_layout()
+
+    # Save to PDF
+    with PdfPages(output_file) as pdf:
+        pdf.savefig()
+        print(f"Saved plot to {output_file}")
+
+
 if __name__ == "__main__":
     from leap_c.examples.cartpole_dimensionless.config import (
         get_default_cartpole_params,
@@ -166,17 +226,9 @@ if __name__ == "__main__":
         reference_params=params, rod_length=0.1
     )
 
-    # check mass ratio
-    pi_1_ref = params.M.item() / params.m.item()
-    pi_1_sim = similar_params.M.item() / similar_params.m.item()
+    # check pi groups
+    pi_1_ref, pi_2_ref = get_pi_groups(params)
+    pi_1_sim, pi_2_sim = get_pi_groups(similar_params)
     assert np.allclose(pi_1_ref, pi_1_sim), "Pi-group 1 mismatch"
-
-    # check friction
-    M_ref = params.M.item()
-    M_sim = similar_params.M.item()
-    l_ref = params.l.item()
-    l_sim = similar_params.l.item()
-    pi_2_ref = 1.0 / M_ref * np.sqrt(l_ref)
-    pi_2_sim = 1.0 / M_sim * np.sqrt(l_sim)
     assert np.allclose(pi_2_ref, pi_2_sim), "Pi-group 2 mismatch"
     print("ok")
