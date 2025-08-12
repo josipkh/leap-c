@@ -5,22 +5,26 @@ import os
 import shutil
 
 
-def get_transformation_matrices(cartpole_params: CartPoleParams) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+def get_transformation_matrices(
+    cartpole_params: CartPoleParams,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Returns the matrices for transforming the system to a non-dimensional form."""
     l = cartpole_params.l.item()  # length of the rod
     m = cartpole_params.M.item()  # mass of the cart
     g = cartpole_params.g.item()  # gravity constant
 
-    Mx = np.diag([l, 1.0, np.sqrt(g*l), np.sqrt(g/l)])
-    Mu = np.diag([m*g])
-    Mt = np.diag([np.sqrt(l/g)])
-    
+    Mx = np.diag([l, 1.0, np.sqrt(g * l), np.sqrt(g / l)])
+    Mu = np.diag([m * g])
+    Mt = np.diag([np.sqrt(l / g)])
+
     return Mx, Mu, Mt
 
 
-def get_similar_cartpole_params(reference_params: CartPoleParams, rod_length: float) -> CartPoleParams:
+def get_similar_cartpole_params(
+    reference_params: CartPoleParams, rod_length: float
+) -> CartPoleParams:
     """Returns the parameters of a cartpole system (MDP) dynamically similar to the reference one.
-    
+
     Dynamic matching is based on eq. (28) in this paper: https://ieeexplore.ieee.org/document/10178119
     which contains five parameters: pole length, cart mass, pole mass, cart friction and gravity.
 
@@ -32,8 +36,15 @@ def get_similar_cartpole_params(reference_params: CartPoleParams, rod_length: fl
     new_params.l = np.array([rod_length])
 
     # match the pi-groups
-    new_params.M = np.array([reference_params.M.item() * np.sqrt(new_params.l.item() / reference_params.l.item())])  # keep relative friction
-    new_params.m = reference_params.m * (new_params.M / reference_params.M)  # mass ratio
+    new_params.M = np.array(
+        [
+            reference_params.M.item()
+            * np.sqrt(new_params.l.item() / reference_params.l.item())
+        ]
+    )  # keep relative friction
+    new_params.m = reference_params.m * (
+        new_params.M / reference_params.M
+    )  # mass ratio
 
     # check the pi-groups
     pi_1_ref = reference_params.M.item() / reference_params.m.item()
@@ -60,13 +71,16 @@ def get_similar_cartpole_params(reference_params: CartPoleParams, rod_length: fl
     r_diag = (M.T @ R @ M).diagonal()
 
     for k in range(5):
-        new_params.__setattr__(f"L{k+1}{k+1}", np.array([np.sqrt(q_diag[k] if k < 4 else r_diag[k-4])]))
+        new_params.__setattr__(
+            f"L{k + 1}{k + 1}",
+            np.array([np.sqrt(q_diag[k] if k < 4 else r_diag[k - 4])]),
+        )
 
     # check the matrices
     q, r = get_cost_matrices(new_params)
     assert np.allclose(Mx @ Q @ Mx, mx @ q @ mx)
     assert np.allclose(Mu @ R @ Mu, mu @ r @ mu)
-    
+
     # match the input constraint
     new_params.Fmax = reference_params.Fmax * (new_params.M / reference_params.M)
 
@@ -74,26 +88,30 @@ def get_similar_cartpole_params(reference_params: CartPoleParams, rod_length: fl
     new_params.dt = reference_params.dt * np.sqrt(new_params.l / reference_params.l)
 
     # match the discount factor (through the continuous discount rate r = -log(gamma)/dt)
-    new_params.gamma = np.power(reference_params.gamma, new_params.dt / reference_params.dt)
+    new_params.gamma = np.power(
+        reference_params.gamma, new_params.dt / reference_params.dt
+    )
 
     return new_params
 
 
 def get_cost_matrices(cartpole_params: CartPoleParams) -> tuple[np.ndarray, np.ndarray]:
     """Returns the cost matrices Q and R for the given cartpole system."""
-    Q = np.diag([
-        cartpole_params.L11.item()**2,
-        cartpole_params.L22.item()**2,
-        cartpole_params.L33.item()**2,
-        cartpole_params.L44.item()**2,
-    ])
-    R = np.diag([cartpole_params.L55.item()**2])
+    Q = np.diag(
+        [
+            cartpole_params.L11.item() ** 2,
+            cartpole_params.L22.item() ** 2,
+            cartpole_params.L33.item() ** 2,
+            cartpole_params.L44.item() ** 2,
+        ]
+    )
+    R = np.diag([cartpole_params.L55.item() ** 2])
     return Q, R
 
 
-def acados_cleanup(path='.'):
-    files_to_delete = ['acados_sim.json', 'acados_ocp.json']
-    folder_to_delete = 'c_generated_code'
+def acados_cleanup(path="."):
+    files_to_delete = ["acados_sim.json", "acados_ocp.json"]
+    folder_to_delete = "c_generated_code"
 
     items_to_delete = []
 
@@ -120,7 +138,7 @@ def acados_cleanup(path='.'):
 
     # Ask for confirmation
     confirm = input("Do you want to proceed? (y/n): ").strip().lower()
-    if confirm != 'y':
+    if confirm != "y":
         print("Aborted.")
         return
 
@@ -138,14 +156,19 @@ def acados_cleanup(path='.'):
 
 
 if __name__ == "__main__":
-    from leap_c.examples.cartpole_dimensionless.config import get_default_cartpole_params
-    params = get_default_cartpole_params()    
+    from leap_c.examples.cartpole_dimensionless.config import (
+        get_default_cartpole_params,
+    )
+
+    params = get_default_cartpole_params()
     Mx, Mu, Mt = get_transformation_matrices(params)
-    similar_params = get_similar_cartpole_params(reference_params=params, rod_length=0.1)
+    similar_params = get_similar_cartpole_params(
+        reference_params=params, rod_length=0.1
+    )
 
     # check mass ratio
-    pi_1_ref = params.M.item()/params.m.item()
-    pi_1_sim = similar_params.M.item()/similar_params.m.item()
+    pi_1_ref = params.M.item() / params.m.item()
+    pi_1_sim = similar_params.M.item() / similar_params.m.item()
     assert np.allclose(pi_1_ref, pi_1_sim), "Pi-group 1 mismatch"
 
     # check friction
@@ -153,7 +176,7 @@ if __name__ == "__main__":
     M_sim = similar_params.M.item()
     l_ref = params.l.item()
     l_sim = similar_params.l.item()
-    pi_2_ref = 1.0/M_ref*np.sqrt(l_ref)
-    pi_2_sim = 1.0/M_sim*np.sqrt(l_sim)
-    assert np.allclose(pi_2_ref, pi_2_sim), "Pi-group 2 mismatch" 
+    pi_2_ref = 1.0 / M_ref * np.sqrt(l_ref)
+    pi_2_sim = 1.0 / M_sim * np.sqrt(l_sim)
+    assert np.allclose(pi_2_ref, pi_2_sim), "Pi-group 2 mismatch"
     print("ok")

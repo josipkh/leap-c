@@ -1,7 +1,11 @@
 import gymnasium as gym
 import numpy as np
 from gymnasium import spaces
-from leap_c.examples.cartpole_dimensionless.config import CartPoleParams, get_default_cartpole_params, dimensionless
+from leap_c.examples.cartpole_dimensionless.config import (
+    CartPoleParams,
+    get_default_cartpole_params,
+    dimensionless,
+)
 from leap_c.examples.cartpole_dimensionless.model import export_acados_integrator
 from leap_c.examples.cartpole_dimensionless.utils import get_transformation_matrices
 from scipy.integrate import solve_ivp
@@ -60,11 +64,15 @@ class CartpoleSwingupEnvDimensionless(gym.Env):
         use_acados_integrator: bool = False,
     ):
         if cartpole_params is None:
-            input("Warning: No parameters provided in the env, using default parameters. Press Enter to continue...")
+            input(
+                "Warning: No parameters provided in the env, using default parameters. Press Enter to continue..."
+            )
             cartpole_params = get_default_cartpole_params()
 
         if dimensionless:
-            self.Ms, self.Ma, self.Mt = get_transformation_matrices(cartpole_params)  # s(physical) = Ms * s(dimensionless)
+            self.Ms, self.Ma, self.Mt = get_transformation_matrices(
+                cartpole_params
+            )  # s(physical) = Ms * s(dimensionless)
             self.Ms_inv = np.linalg.inv(self.Ms)
             self.Ma_inv = np.linalg.inv(self.Ma)
             self.Mt_inv = np.linalg.inv(self.Mt)
@@ -79,6 +87,7 @@ class CartpoleSwingupEnvDimensionless(gym.Env):
         if use_acados_integrator:
             self.integrator = export_acados_integrator(cartpole_params=cartpole_params)
         else:
+
             def f_explicit(s, a, cartpole_params):
                 g = cartpole_params.g.item()
                 M = cartpole_params.M.item()
@@ -101,30 +110,30 @@ class CartpoleSwingupEnvDimensionless(gym.Env):
                 #           + F * cos_theta
                 #           + (M + m) * g * sin_theta
                 #         ) / (l * denominator)
-                
+
                 # model with friction
                 ddx = (
-                    - 2 * (m*l) * (dtheta**2) * sin_theta
+                    -2 * (m * l) * (dtheta**2) * sin_theta
                     + 3 * m * g * sin_theta * cos_theta
                     + 4 * F
                     - 4 * mu_f * dx
-                    ) / (4 * (m+M) - 3 * m * cos_theta**2)
+                ) / (4 * (m + M) - 3 * m * cos_theta**2)
                 ddtheta = (
-                    - 3 * (m*l) * (dtheta**2) * sin_theta * cos_theta
-                    + 6 * (m+M) * g * sin_theta
+                    -3 * (m * l) * (dtheta**2) * sin_theta * cos_theta
+                    + 6 * (m + M) * g * sin_theta
                     + 6 * (F - mu_f * dx) * cos_theta
-                    ) / (
-                    + 4 * l * (m+M)
-                    - 3 * (m*l) * cos_theta**2
-                    )
+                ) / (+4 * l * (m + M) - 3 * (m * l) * cos_theta**2)
 
                 return np.array([dx, dtheta, ddx, ddtheta])
 
             def scipy_step(f, s, a, dt):
                 t_span = (0, dt)
-                fun = lambda _, y: np.hstack(( f(s=y[:4], a=y[4], cartpole_params=cartpole_params), 0.0))
+                fun = lambda _, y: np.hstack(
+                    (f(s=y[:4], a=y[4], cartpole_params=cartpole_params), 0.0)
+                )
                 sol = solve_ivp(fun, t_span, np.hstack((s, a)), method="RK45")
-                return sol.y[:4,-1]
+                return sol.y[:4, -1]
+
             self.integrator = lambda s, a: scipy_step(f_explicit, s, a, self.dt)
 
         # state and action bounds
@@ -132,7 +141,9 @@ class CartpoleSwingupEnvDimensionless(gym.Env):
             [
                 self.x_threshold * 2,
                 2 * np.pi,
-                0.625 * self.length / self.dt,  # corresponds to 10 m/s for the default system
+                0.625
+                * self.length
+                / self.dt,  # corresponds to 10 m/s for the default system
                 0.5 / self.dt,  # corresponds to 10 rad/s for the default system
             ],
             dtype=np.float32,
@@ -169,12 +180,11 @@ class CartpoleSwingupEnvDimensionless(gym.Env):
         self.dim2nondim_a = lambda a: self.Ma_inv @ a if dimensionless else a
         self.nondim2dim_a = lambda a: self.Ma @ a if dimensionless else a
 
-
     def step(self, action: np.ndarray) -> tuple[np.ndarray, float, bool, bool, dict]:
         """Execute the dynamics of the pendulum on cart."""
         if self.reset_needed:
             raise RuntimeError("Call reset before using the step method.")
-        
+
         # scale the MPC output back if dimensionless
         if dimensionless:
             action = self.nondim2dim_a(action)
@@ -208,7 +218,9 @@ class CartpoleSwingupEnvDimensionless(gym.Env):
         if self.t > self.max_episode_length:
             # check if the pole is upright in the last 10 steps
             if len(self.s_trajectory) >= 10:
-                success = all(np.abs(self.s_trajectory[i][1]) < 0.1 for i in range(-10, 0))  # TODO: check if 0.1 is a good limit
+                success = all(
+                    np.abs(self.s_trajectory[i][1]) < 0.1 for i in range(-10, 0)
+                )  # TODO: check if 0.1 is a good limit
             else:
                 success = False  # Not enough data to determine success
 
@@ -221,9 +233,8 @@ class CartpoleSwingupEnvDimensionless(gym.Env):
 
         return obs, r, term, trunc, info
 
-
     def reset(
-            self, *, seed: int | None = None, options: dict | None = None
+        self, *, seed: int | None = None, options: dict | None = None
     ) -> tuple[np.ndarray, dict]:  # type: ignore
         if seed is not None:
             super().reset(seed=seed)
@@ -240,7 +251,6 @@ class CartpoleSwingupEnvDimensionless(gym.Env):
 
         obs = self.dim2nondim_s(self.s) if dimensionless else self.s
         return obs, {}
-
 
     def init_state(self) -> np.ndarray:
         """The pendulum is hanging down at the start."""
@@ -282,7 +292,7 @@ class CartpoleSwingupEnvDimensionless(gym.Env):
             self.window = pygame.display.set_mode(
                 (self.screen_width, self.screen_height)
             )
-        
+
         # initialize the font for displaying text
         if not pygame.get_init():
             pygame.init()
@@ -416,7 +426,7 @@ class CartpoleSwingupEnvDimensionless(gym.Env):
 
             pygame.display.quit()
             pygame.quit()
-    
+
 
 if __name__ == "__main__":
     from leap_c.examples.cartpole_dimensionless.utils import get_similar_cartpole_params
@@ -428,10 +438,12 @@ if __name__ == "__main__":
     env_ref = CartpoleSwingupEnvDimensionless(cartpole_params=params_ref)
 
     rod_length = 5.0  # [m]
-    params_sim = get_similar_cartpole_params(reference_params=params_ref, rod_length=rod_length)
+    params_sim = get_similar_cartpole_params(
+        reference_params=params_ref, rod_length=rod_length
+    )
     env_sim = CartpoleSwingupEnvDimensionless(cartpole_params=params_sim)
     # env_sim = CartpoleSwingupEnvDimensionless(cartpole_params=params_ref, use_acados_integrator=True)
-    
+
     assert env_ref.action_space == env_sim.action_space
     assert env_ref.observation_space == env_sim.observation_space
 
@@ -458,27 +470,33 @@ if __name__ == "__main__":
 
         obs_ref_log.append(obs_ref)
         obs_sim_log.append(obs_sim)
-        diffs.append(np.max(np.abs(obs_ref-obs_sim)))
+        diffs.append(np.max(np.abs(obs_ref - obs_sim)))
         act_log.append(action)
         # assert np.allclose(obs_ref, obs_sim, atol=1e-04)
-    print(f'max diff: {np.max(diffs)}')
-    
+    print(f"max diff: {np.max(diffs)}")
+
     import matplotlib.pyplot as plt
+
     obs_ref_log = np.array(obs_ref_log)
     obs_sim_log = np.array(obs_sim_log)
     act_log = np.array(act_log)
     nx = 4
-    fig, ax = plt.subplots(nx+1, 1, sharex=True)
+    fig, ax = plt.subplots(nx + 1, 1, sharex=True)
     labels = ["ref", "sim"]  # ["scipy", "acados"]
     for i in range(nx):
         ax[i].plot(obs_ref_log[:, i], color="b", label=labels[0])
         ax[i].plot(obs_sim_log[:, i], color="r", linestyle="--", label=labels[1])
         ax[i].grid()
-        ax[i].set_ylabel(f'$x_{i}$')
+        ax[i].set_ylabel(f"$x_{i}$")
     ax[0].legend()
-    ax[-1].step(list(range(obs_ref_log.shape[0])), np.append([act_log[0]], act_log), where="post", color="b")
-    ax[-1].set_ylabel('$u$')
-    ax[-1].grid()    
+    ax[-1].step(
+        list(range(obs_ref_log.shape[0])),
+        np.append([act_log[0]], act_log),
+        where="post",
+        color="b",
+    )
+    ax[-1].set_ylabel("$u$")
+    ax[-1].grid()
 
     plt.subplots_adjust(left=None, bottom=None, right=None, top=None, hspace=0.4)
     fig.align_ylabels(ax)

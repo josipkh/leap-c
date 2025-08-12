@@ -9,8 +9,15 @@ from leap_c.examples.util import (
     translate_learnable_param_to_p_global,
 )
 from leap_c.ocp.acados.mpc import Mpc
-from leap_c.examples.cartpole_dimensionless.config import CartPoleParams, get_default_cartpole_params, dimensionless
-from leap_c.examples.cartpole_dimensionless.utils import get_transformation_matrices, get_similar_cartpole_params
+from leap_c.examples.cartpole_dimensionless.config import (
+    CartPoleParams,
+    get_default_cartpole_params,
+    dimensionless,
+)
+from leap_c.examples.cartpole_dimensionless.utils import (
+    get_transformation_matrices,
+    get_similar_cartpole_params,
+)
 from copy import deepcopy
 
 # TODO: scale other cost parameters (c, xref, uref)
@@ -79,7 +86,9 @@ class CartpoleMpcDimensionless(Mpc):
         params = deepcopy(cartpole_params)  # to prevent any modification to the input
 
         if dimensionless:
-            Mx, Mu, Mt = get_transformation_matrices(params)  # x(physical) = Mx * x(dimensionless)
+            Mx, Mu, Mt = get_transformation_matrices(
+                params
+            )  # x(physical) = Mx * x(dimensionless)
             # Mx_inv = np.linalg.inv(Mx)
             Mu_inv = np.linalg.inv(Mu)
             Mt_inv = np.linalg.inv(Mt)
@@ -156,23 +165,20 @@ def f_expl_expr(model: AcadosModel) -> ca.SX:
     #     + F * cos_theta
     #     + (M + m) * g * sin_theta
     #     ) / (l * denominator)
-    
+
     # (model with friction)
     mu_f = p["mu_f"]
     ddx = (
-        - 2 * (m*l) * (dtheta**2) * sin_theta
+        -2 * (m * l) * (dtheta**2) * sin_theta
         + 3 * m * g * sin_theta * cos_theta
         + 4 * F
         - 4 * mu_f * dx
-        ) / (4 * (m+M) - 3 * m * cos_theta**2)
+    ) / (4 * (m + M) - 3 * m * cos_theta**2)
     ddtheta = (
-        - 3 * (m*l) * (dtheta**2) * sin_theta * cos_theta
-        + 6 * (m+M) * g * sin_theta
+        -3 * (m * l) * (dtheta**2) * sin_theta * cos_theta
+        + 6 * (m + M) * g * sin_theta
         + 6 * (F - mu_f * dx) * cos_theta
-        ) / (
-        + 4 * l * (m+M)
-        - 3 * (m*l) * cos_theta**2
-        )
+    ) / (+4 * l * (m + M) - 3 * (m * l) * cos_theta**2)
 
     f_expl = ca.vertcat(dx, dtheta, ddx, ddtheta)
 
@@ -181,31 +187,36 @@ def f_expl_expr(model: AcadosModel) -> ca.SX:
         s = model.x
         a = model.u
 
-        x_hat       = ca.SX.sym('x_hat')
-        theta_hat   = ca.SX.sym('theta_hat')
-        dx_hat      = ca.SX.sym('dx_hat')
-        dtheta_hat  = ca.SX.sym('dtheta_hat')
+        x_hat = ca.SX.sym("x_hat")
+        theta_hat = ca.SX.sym("theta_hat")
+        dx_hat = ca.SX.sym("dx_hat")
+        dtheta_hat = ca.SX.sym("dtheta_hat")
         s_hat = ca.vertcat(x_hat, dx_hat, theta_hat, dtheta_hat)
 
-        F_hat = ca.SX.sym('F_hat')
+        F_hat = ca.SX.sym("F_hat")
         a_hat = ca.vertcat(F_hat)
 
-        t_scale = np.sqrt(l/g)
+        t_scale = np.sqrt(l / g)
         x_scale = l
         theta_scale = 1
-        F_scale = M*g
+        F_scale = M * g
 
-        s_scale = [x_scale, theta_scale, x_scale/t_scale, theta_scale/t_scale]
+        s_scale = [x_scale, theta_scale, x_scale / t_scale, theta_scale / t_scale]
         a_scale = [F_scale]
-        ds_scale = [x_scale/t_scale, theta_scale/t_scale, x_scale/t_scale**2, theta_scale/t_scale**2]
+        ds_scale = [
+            x_scale / t_scale,
+            theta_scale / t_scale,
+            x_scale / t_scale**2,
+            theta_scale / t_scale**2,
+        ]
 
         # RHS states
         for k in range(len(s_scale)):
-            f_expl = ca.substitute(f_expl, s[k], s_scale[k]*s_hat[k])
+            f_expl = ca.substitute(f_expl, s[k], s_scale[k] * s_hat[k])
 
         # RHS actions
         for k in range(len(a_scale)):
-            f_expl = ca.substitute(f_expl, a[k], a_scale[k]*a_hat[k])
+            f_expl = ca.substitute(f_expl, a[k], a_scale[k] * a_hat[k])
 
         # LHS (derivatives)
         for k in range(len(ds_scale)):
@@ -213,7 +224,7 @@ def f_expl_expr(model: AcadosModel) -> ca.SX:
 
         model.x = s_hat
         model.u = a_hat
-        model.name += '_dimensionless'
+        model.name += "_dimensionless"
 
     return f_expl  # type:ignore
 
@@ -225,7 +236,9 @@ def disc_dyn_expr(model: AcadosModel, dt: float) -> ca.SX:
     u = model.u
 
     # discrete dynamics via RK4
-    p = ca.vertcat(*find_param_in_p_or_p_global(["M", "m", "g", "l", "mu_f"], model).values())
+    p = ca.vertcat(
+        *find_param_in_p_or_p_global(["M", "m", "g", "l", "mu_f"], model).values()
+    )
 
     ode = ca.Function("ode", [x, u, p], [f_expl])
     k1 = ode(x, u, p)
@@ -378,7 +391,9 @@ def export_parametric_ocp(
     ocp.constraints.idxbu = np.array([0])
 
     # scale the constraint on the cart position
-    x_max = 3 * (1.0 if dimensionless else nominal_param["l"][0])  # relative or absolute
+    x_max = 3 * (
+        1.0 if dimensionless else nominal_param["l"][0]
+    )  # relative or absolute
     ocp.constraints.ubx = np.array([x_max])
     ocp.constraints.lbx = -ocp.constraints.ubx
     ocp.constraints.idxbx = np.array([0])
@@ -388,7 +403,7 @@ def export_parametric_ocp(
 
     # scale the slack penalty on the cart position
     # 640.0 corresponds to 1e3 for the default (physical) system
-    slack_penalty = 640.0 / (1.0 if dimensionless else nominal_param["l"][0]**2)
+    slack_penalty = 640.0 / (1.0 if dimensionless else nominal_param["l"][0] ** 2)
     ocp.constraints.idxsbx = np.array([0])
     ocp.cost.Zu = ocp.cost.Zl = np.array([slack_penalty])
     ocp.cost.zu = ocp.cost.zl = np.array([0.0])
@@ -430,15 +445,25 @@ if __name__ == "__main__":
     # create MPCs for the default and similar parameters
     learnable_params = ["xref2"]
     reference_params = get_default_cartpole_params()
-    reference_mpc = CartpoleMpcDimensionless(cartpole_params=reference_params, learnable_params=learnable_params, N_horizon=5)
+    reference_mpc = CartpoleMpcDimensionless(
+        cartpole_params=reference_params, learnable_params=learnable_params, N_horizon=5
+    )
     rod_length = 50.0  # [m] 0.1
-    similar_params = get_similar_cartpole_params(reference_params=reference_params, rod_length=rod_length)
-    similar_mpc = CartpoleMpcDimensionless(cartpole_params=similar_params, learnable_params=learnable_params, N_horizon=5)
+    similar_params = get_similar_cartpole_params(
+        reference_params=reference_params, rod_length=rod_length
+    )
+    similar_mpc = CartpoleMpcDimensionless(
+        cartpole_params=similar_params, learnable_params=learnable_params, N_horizon=5
+    )
 
     # check the MPC cost and constraints
     if dimensionless:
-        assert np.allclose(similar_mpc.ocp.constraints.ubu, reference_mpc.ocp.constraints.ubu)
-        assert np.allclose(similar_mpc.ocp.constraints.ubx, reference_mpc.ocp.constraints.ubx)
+        assert np.allclose(
+            similar_mpc.ocp.constraints.ubu, reference_mpc.ocp.constraints.ubu
+        )
+        assert np.allclose(
+            similar_mpc.ocp.constraints.ubx, reference_mpc.ocp.constraints.ubx
+        )
 
         Mx, Mu, _ = get_transformation_matrices(reference_params)
         mx, mu, _ = get_transformation_matrices(similar_params)
@@ -451,13 +476,18 @@ if __name__ == "__main__":
 
     # compare the solutions for a random initial condition
     from leap_c.ocp.acados.mpc import MpcInput
+
     # x0 = np.array([0.0, np.pi, 0.0, 0.0])  # resting
     x0 = np.array(np.random.rand(4))  # random state
-    x0 = x0[:,np.newaxis].T  # make it batched
+    x0 = x0[:, np.newaxis].T  # make it batched
     mpc_input = MpcInput(x0=x0)
     reference_mpc_output = reference_mpc(mpc_input=mpc_input)
     similar_mpc_output = reference_mpc(mpc_input=mpc_input)
-    assert np.allclose(reference_mpc_output[0].u0.item(), similar_mpc_output[0].u0.item())
+    assert np.allclose(
+        reference_mpc_output[0].u0.item(), similar_mpc_output[0].u0.item()
+    )
     assert np.allclose(reference_mpc_output[0].V.item(), similar_mpc_output[0].V.item())
-    assert np.allclose(reference_mpc_output[0].status.item(), similar_mpc_output[0].status.item())
+    assert np.allclose(
+        reference_mpc_output[0].status.item(), similar_mpc_output[0].status.item()
+    )
     print("ok")
