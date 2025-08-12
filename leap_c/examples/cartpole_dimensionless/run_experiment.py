@@ -16,7 +16,7 @@ task = CartpoleSwingupDimensionless(
     mpc_params=get_default_cartpole_params(),
     env_params=get_similar_cartpole_params(
         reference_params=get_default_cartpole_params(),
-        rod_length=5.0,
+        pole_length=5.0,
     ),
 )
 seed = 0

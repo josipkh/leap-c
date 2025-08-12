@@ -4,7 +4,7 @@ import numpy as np
 # global settings, used in several places
 dimensionless = True
 test_similar = False  # if False, use the default cartpole parameters, otherwise use the dynamically similar ones
-rod_length = 5.0  # [m]
+pole_length = 5.0  # [m]
 
 @dataclass(kw_only=True)
 class CartPoleParams:
@@ -12,7 +12,7 @@ class CartPoleParams:
     M: np.ndarray         # mass of the cart [kg]
     m: np.ndarray         # mass of the ball [kg]
     g: np.ndarray         # gravity constant [m/s^2]
-    l: np.ndarray         # length of the rod [m]
+    l: np.ndarray         # length of the pole [m]
     mu_f: np.ndarray      # friction coefficient [kg/s]
 
     # Cost matrix factorization parameters, W = L @ L.T

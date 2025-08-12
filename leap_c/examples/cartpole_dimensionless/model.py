@@ -213,9 +213,9 @@ if __name__ == "__main__":
     from leap_c.examples.cartpole_dimensionless.utils import get_similar_cartpole_params
 
     params_ref = get_default_cartpole_params()
-    rod_length = 5.0  # [m] 0.1
+    pole_length = 5.0  # [m] 0.1
     params_sim = get_similar_cartpole_params(
-        reference_params=params_ref, rod_length=rod_length
+        reference_params=params_ref, pole_length=pole_length
     )
 
     # large cartpole

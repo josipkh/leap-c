@@ -31,7 +31,7 @@ class CartpoleMpcDimensionless(Mpc):
         M: mass of the cart [kg]
         m: mass of the ball [kg]
         g: gravity constant [m/s^2]
-        l: length of the rod [m]
+        l: length of the pole [m]
 
         ---------Cost---------
         The parameters of the quadratic cost matrix describe a cholesky factorization of the cost matrix.
@@ -448,9 +448,9 @@ if __name__ == "__main__":
     reference_mpc = CartpoleMpcDimensionless(
         cartpole_params=reference_params, learnable_params=learnable_params, N_horizon=5
     )
-    rod_length = 50.0  # [m] 0.1
+    pole_length = 50.0  # [m] 0.1
     similar_params = get_similar_cartpole_params(
-        reference_params=reference_params, rod_length=rod_length
+        reference_params=reference_params, pole_length=pole_length
     )
     similar_mpc = CartpoleMpcDimensionless(
         cartpole_params=similar_params, learnable_params=learnable_params, N_horizon=5

@@ -12,7 +12,7 @@ def get_transformation_matrices(
     cartpole_params: CartPoleParams,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Returns the matrices for transforming the system to a non-dimensional form."""
-    l = cartpole_params.l.item()  # length of the rod
+    l = cartpole_params.l.item()  # length of the pole
     m = cartpole_params.M.item()  # mass of the cart
     g = cartpole_params.g.item()  # gravity constant
 
@@ -24,7 +24,7 @@ def get_transformation_matrices(
 
 
 def get_similar_cartpole_params(
-    reference_params: CartPoleParams, rod_length: float
+    reference_params: CartPoleParams, pole_length: float
 ) -> CartPoleParams:
     """Returns the parameters of a cartpole system (MDP) dynamically similar to the reference one.
 
@@ -36,7 +36,7 @@ def get_similar_cartpole_params(
     Mx, Mu, _ = get_transformation_matrices(reference_params)
 
     new_params = deepcopy(reference_params)
-    new_params.l = np.array([rod_length])
+    new_params.l = np.array([pole_length])
 
     # match the pi-groups
     new_params.M = np.array(
@@ -223,7 +223,7 @@ if __name__ == "__main__":
     params = get_default_cartpole_params()
     Mx, Mu, Mt = get_transformation_matrices(params)
     similar_params = get_similar_cartpole_params(
-        reference_params=params, rod_length=0.1
+        reference_params=params, pole_length=0.1
     )
 
     # check pi groups

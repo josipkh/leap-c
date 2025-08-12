@@ -19,8 +19,8 @@ main_output_path = Path(f"{output_root}/{task_name}/{time_str}")
 
 # cartpole parameters
 default_params = get_default_cartpole_params()
-small_params = get_similar_cartpole_params(reference_params=default_params, rod_length=0.1)
-large_params = get_similar_cartpole_params(reference_params=default_params, rod_length=5.0)
+small_params = get_similar_cartpole_params(reference_params=default_params, pole_length=0.1)
+large_params = get_similar_cartpole_params(reference_params=default_params, pole_length=5.0)
 
 # learning tasks
 task_default = CartpoleSwingupDimensionless(mpc_params=default_params, env_params=default_params)

@@ -437,9 +437,9 @@ if __name__ == "__main__":
     params_ref = get_default_cartpole_params()
     env_ref = CartpoleSwingupEnvDimensionless(cartpole_params=params_ref)
 
-    rod_length = 5.0  # [m]
+    pole_length = 5.0  # [m]
     params_sim = get_similar_cartpole_params(
-        reference_params=params_ref, rod_length=rod_length
+        reference_params=params_ref, pole_length=pole_length
     )
     env_sim = CartpoleSwingupEnvDimensionless(cartpole_params=params_sim)
     # env_sim = CartpoleSwingupEnvDimensionless(cartpole_params=params_ref, use_acados_integrator=True)
