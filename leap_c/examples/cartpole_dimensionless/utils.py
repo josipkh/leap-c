@@ -162,7 +162,7 @@ def acados_cleanup(path="."):
             print(f"Error deleting {item}: {e}")
 
 
-def plot_results(main_folder, cfg, plot_std=False):
+def plot_results(main_folder, plot_std=False):
     """Plots the experiment results averaged over the seeds."""
 
     experiments = ['default', 'small', 'large', 'transfer_small', 'transfer_large']
@@ -198,7 +198,7 @@ def plot_results(main_folder, cfg, plot_std=False):
     plt.figure(figsize=(10, 6))
     for exp_name, data in experiment_results.items():
         if metric in data['mean'].columns:
-            steps = data['mean'].index * cfg.val.interval
+            steps = data['mean'].index
             mean_values = data['mean'][metric]
             plt.plot(steps, mean_values, label=exp_name)
             if plot_std:

@@ -83,4 +83,4 @@ for seed in range(5):
 
         main(trainer_name, task_name, cfg, output_path, device, task)
 
-plot_results(main_folder=main_output_path, cfg=cfg, plot_std=False)
+plot_results(main_folder=main_output_path, plot_std=False)
