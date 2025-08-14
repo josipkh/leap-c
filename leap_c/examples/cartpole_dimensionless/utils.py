@@ -110,7 +110,7 @@ def get_pi_groups(cartpole_params: CartPoleParams) -> tuple[float, float]:
     mu_f = cartpole_params.mu_f.item()
     g = cartpole_params.g.item()
 
-    pi_1 = M / m
+    pi_1 = m / M
     pi_2 = mu_f / M * np.sqrt(l / g)
 
     return pi_1, pi_2
@@ -179,6 +179,9 @@ def plot_results(main_folder, cfg, plot_std=False):
             file_path = os.path.join(main_folder, exp, seed, 'val_log.csv')
             if os.path.exists(file_path):
                 df = pd.read_csv(file_path, index_col=0)
+                # keep only the scores created after transfer
+                if df.shape[0] > len(seeds) + 1:
+                    df = df.tail(len(seeds) + 1)
                 seed_dfs.append(df)
             else:
                 print(f"Warning: Missing file {file_path}")

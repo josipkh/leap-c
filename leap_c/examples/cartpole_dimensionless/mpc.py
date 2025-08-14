@@ -422,7 +422,7 @@ def export_parametric_ocp(
     ocp.solver_options.with_batch_functionality = True
 
     # warmstarting
-    ocp.solver_options.qp_solver_warm_start = 0
+    ocp.solver_options.qp_solver_warm_start = 1
     ocp.solver_options.nlp_solver_warm_start_first_qp = True
     ocp.solver_options.nlp_solver_warm_start_first_qp_from_nlp = True
 
