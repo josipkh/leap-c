@@ -4,7 +4,6 @@ from gymnasium import spaces
 from leap_c.examples.cartpole_dimensionless.config import (
     CartPoleParams,
     get_default_cartpole_params,
-    dimensionless,
 )
 from leap_c.examples.cartpole_dimensionless.model import export_acados_integrator
 from leap_c.examples.cartpole_dimensionless.utils import get_transformation_matrices
@@ -62,12 +61,10 @@ class CartpoleSwingupEnvDimensionless(gym.Env):
         render_mode: str | None = None,
         cartpole_params: CartPoleParams | None = None,
         use_acados_integrator: bool = False,
+        dimensionless: bool = True,
     ):
         if cartpole_params is None:
-            input(
-                "Warning: No parameters provided in the env, using default parameters. Press Enter to continue..."
-            )
-            cartpole_params = get_default_cartpole_params()
+            raise ValueError("No parameters provided in the env.")
 
         if dimensionless:
             self.Ms, self.Ma, self.Mt = get_transformation_matrices(
@@ -82,6 +79,7 @@ class CartpoleSwingupEnvDimensionless(gym.Env):
         self.dt = cartpole_params.dt.item()
         self.max_episode_length = 200 * self.dt  # [s] episode duration
         self.x_threshold = 3 * self.length  # [m] cart position
+        self.dimensionless = dimensionless  # whether to use the dimensionless formulation
 
         self.use_acados_integrator = use_acados_integrator
         if use_acados_integrator:
@@ -186,7 +184,7 @@ class CartpoleSwingupEnvDimensionless(gym.Env):
             raise RuntimeError("Call reset before using the step method.")
 
         # scale the MPC output back if dimensionless
-        if dimensionless:
+        if self.dimensionless:
             action = self.nondim2dim_a(action)
 
         # simulate one time step
@@ -229,7 +227,7 @@ class CartpoleSwingupEnvDimensionless(gym.Env):
         self.reset_needed = trunc or term
 
         # make the observation (x,theta,dx,dtheta) dimensionless
-        obs = self.dim2nondim_s(self.s) if dimensionless else self.s
+        obs = self.dim2nondim_s(self.s) if self.dimensionless else self.s
 
         return obs, r, term, trunc, info
 
@@ -249,7 +247,7 @@ class CartpoleSwingupEnvDimensionless(gym.Env):
         self.pos_trajectory = None
         self.pole_end_trajectory = None
 
-        obs = self.dim2nondim_s(self.s) if dimensionless else self.s
+        obs = self.dim2nondim_s(self.s) if self.dimensionless else self.s
         return obs, {}
 
     def init_state(self) -> np.ndarray:
@@ -432,16 +430,17 @@ if __name__ == "__main__":
     from leap_c.examples.cartpole_dimensionless.utils import get_similar_cartpole_params
     # from leap_c.examples.cartpole_dimensionless.utils import acados_cleanup
     # acados_cleanup()
+    dimensionless = True
 
     # create envs for the default and similar parameters
     params_ref = get_default_cartpole_params()
-    env_ref = CartpoleSwingupEnvDimensionless(cartpole_params=params_ref)
+    env_ref = CartpoleSwingupEnvDimensionless(cartpole_params=params_ref, dimensionless=dimensionless)
 
     pole_length = 5.0  # [m]
     params_sim = get_similar_cartpole_params(
         reference_params=params_ref, pole_length=pole_length
     )
-    env_sim = CartpoleSwingupEnvDimensionless(cartpole_params=params_sim)
+    env_sim = CartpoleSwingupEnvDimensionless(cartpole_params=params_sim, dimensionless=dimensionless)
     # env_sim = CartpoleSwingupEnvDimensionless(cartpole_params=params_ref, use_acados_integrator=True)
 
     assert env_ref.action_space == env_sim.action_space

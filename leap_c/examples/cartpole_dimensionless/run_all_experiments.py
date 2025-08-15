@@ -10,7 +10,8 @@ from leap_c.examples.cartpole_dimensionless.utils import get_similar_cartpole_pa
 
 # high-level experiment settings
 keep_output = False  # if False, the output is saved in /tmp/
-task_name = "cartpole_swingup_dimensionless"
+dimensionless = True  # set to False for the original cartpole task
+task_name = "cartpole_swingup" + ("_dimensionless" if dimensionless else "")
 trainer_name = "sac_fop"
 device = "cpu"
 output_root = "output" if keep_output else "/tmp"
@@ -23,9 +24,9 @@ small_params = get_similar_cartpole_params(reference_params=default_params, pole
 large_params = get_similar_cartpole_params(reference_params=default_params, pole_length=5.0)
 
 # learning tasks
-task_default = CartpoleSwingupDimensionless(mpc_params=default_params, env_params=default_params)
-task_small = CartpoleSwingupDimensionless(mpc_params=small_params, env_params=small_params)
-task_large = CartpoleSwingupDimensionless(mpc_params=large_params, env_params=large_params)
+task_default = CartpoleSwingupDimensionless(mpc_params=default_params, env_params=default_params, dimensionless=dimensionless)
+task_small = CartpoleSwingupDimensionless(mpc_params=small_params, env_params=small_params, dimensionless=dimensionless)
+task_large = CartpoleSwingupDimensionless(mpc_params=large_params, env_params=large_params, dimensionless=dimensionless)
 
 task_list = [
     task_default,
@@ -55,6 +56,7 @@ def get_run_config(run_name, seed):
     cfg.sac.entropy_reward_bonus = False  # type: ignore
     cfg.sac.update_freq = 4
     cfg.sac.batch_size = 64
+    cfg.sac.buffer_size = 10_000
     cfg.sac.lr_pi = 1e-4
     cfg.sac.lr_q = 1e-4
     cfg.sac.lr_alpha = 1e-3

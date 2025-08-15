@@ -1,11 +1,6 @@
 from dataclasses import dataclass
 import numpy as np
 
-# global settings, used in several places
-dimensionless = True
-test_similar = False  # if False, use the default cartpole parameters, otherwise use the dynamically similar ones
-pole_length = 5.0  # [m]
-
 @dataclass(kw_only=True)
 class CartPoleParams:
     # Dynamics parameters
@@ -75,72 +70,3 @@ def get_default_cartpole_params() -> CartPoleParams:
         dt=np.array([0.05]),
         gamma=np.array([1.0]),
     )
-
-'''
-def get_large_cartpole_params() -> CartPoleParams:
-    """Based on the model in https://ieeexplore.ieee.org/document/10178119"""
-    return CartPoleParams(
-        M=np.array([1.0]),
-        m=np.array([0.5]),
-        g=np.array([9.81]),
-        l=np.array([0.5]),
-        mu_f=np.array([0.0]),
-
-        L11=np.array([np.sqrt(1)]),
-        L22=np.array([np.sqrt(1)]),
-        L33=np.array([np.sqrt(1e-2)]),
-        L44=np.array([np.sqrt(1e-2)]),
-        L55=np.array([np.sqrt(1e-3)]),
-        Lloweroffdiag=np.array([0.0] * (4 + 3 + 2 + 1)),
-
-        c1=np.array([0.0]),
-        c2=np.array([0.0]),
-        c3=np.array([0.0]),
-        c4=np.array([0.0]),
-        c5=np.array([0.0]),
-
-        xref1=np.array([0.0]),
-        xref2=np.array([0.0]),
-        xref3=np.array([0.0]),
-        xref4=np.array([0.0]),
-        uref=np.array([0.0]),
-
-        Fmax=np.array([10.0]),
-        dt=np.array([0.05]),
-        gamma=np.array([0.9]),
-    )
-
-
-def get_small_cartpole_params() -> CartPoleParams:
-    """Dynamically similar to the system in https://ieeexplore.ieee.org/document/10178119"""
-    return CartPoleParams(
-        M=np.array([0.44]),
-        m=np.array([0.22]),
-        g=np.array([9.81]),
-        l=np.array([0.1]),
-        mu_f=np.array([0.0]),
-
-        L11=np.array([np.sqrt(2e3)]),
-        L22=np.array([np.sqrt(2e3)]),
-        L33=np.array([np.sqrt(1e-2)]),
-        L44=np.array([np.sqrt(1e-2)]),
-        L55=np.array([np.sqrt(2e-1)]),
-        Lloweroffdiag=np.array([0.0] * (4 + 3 + 2 + 1)),
-
-        c1=np.array([0.0]),
-        c2=np.array([0.0]),
-        c3=np.array([0.0]),
-        c4=np.array([0.0]),
-        c5=np.array([0.0]),
-
-        xref1=np.array([0.0]),
-        xref2=np.array([0.0]),
-        xref3=np.array([0.0]),
-        xref4=np.array([0.0]),
-        uref=np.array([0.0]),
-
-        Fmax=np.array([4.4]),
-        dt=np.array([0.022]),
-        gamma=np.array([0.9539]),
-    )
-'''

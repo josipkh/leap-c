@@ -12,7 +12,6 @@ from leap_c.ocp.acados.mpc import Mpc
 from leap_c.examples.cartpole_dimensionless.config import (
     CartPoleParams,
     get_default_cartpole_params,
-    dimensionless,
 )
 from leap_c.examples.cartpole_dimensionless.utils import (
     get_transformation_matrices,
@@ -65,6 +64,7 @@ class CartpoleMpcDimensionless(Mpc):
         n_batch: int = 64,
         exact_hess_dyn: bool = True,
         cost_type: str = "NONLINEAR_LS",
+        dimensionless: bool = True,
     ):
         """
         Args:
@@ -130,6 +130,7 @@ class CartpoleMpcDimensionless(Mpc):
             N_horizon=N_horizon,
             tf=T_horizon_hat,
             Fmax=Fmax_hat,
+            dimensionless=dimensionless,
         )
 
         super().__init__(
@@ -139,7 +140,7 @@ class CartpoleMpcDimensionless(Mpc):
         )
 
 
-def f_expl_expr(model: AcadosModel) -> ca.SX:
+def f_expl_expr(model: AcadosModel, dimensionless: bool) -> ca.SX:
     p = find_param_in_p_or_p_global(["M", "m", "g", "l", "mu_f"], model)
 
     M = p["M"]
@@ -229,8 +230,8 @@ def f_expl_expr(model: AcadosModel) -> ca.SX:
     return f_expl  # type:ignore
 
 
-def disc_dyn_expr(model: AcadosModel, dt: float) -> ca.SX:
-    f_expl = f_expl_expr(model)
+def disc_dyn_expr(model: AcadosModel, dt: float, dimensionless: bool) -> ca.SX:
+    f_expl = f_expl_expr(model, dimensionless)
 
     x = model.x
     u = model.u
@@ -322,6 +323,7 @@ def export_parametric_ocp(
     Fmax: float,
     N_horizon: int,
     tf: float,
+    dimensionless: bool
 ) -> AcadosOcp:
     ocp = AcadosOcp()
 
@@ -353,7 +355,7 @@ def export_parametric_ocp(
         ocp=ocp,
     )
 
-    ocp.model.disc_dyn_expr = disc_dyn_expr(model=ocp.model, dt=dt)  # type:ignore
+    ocp.model.disc_dyn_expr = disc_dyn_expr(model=ocp.model, dt=dt, dimensionless=dimensionless)  # type:ignore
 
     ######## Cost ########
     if cost_type == "EXTERNAL":
@@ -441,19 +443,20 @@ def export_parametric_ocp(
 
 if __name__ == "__main__":
     from leap_c.examples.cartpole_dimensionless.utils import get_cost_matrices
+    dimensionless = True
 
     # create MPCs for the default and similar parameters
     learnable_params = ["xref2"]
     reference_params = get_default_cartpole_params()
     reference_mpc = CartpoleMpcDimensionless(
-        cartpole_params=reference_params, learnable_params=learnable_params, N_horizon=5
+        cartpole_params=reference_params, learnable_params=learnable_params, N_horizon=5, dimensionless=dimensionless
     )
     pole_length = 50.0  # [m] 0.1
     similar_params = get_similar_cartpole_params(
         reference_params=reference_params, pole_length=pole_length
     )
     similar_mpc = CartpoleMpcDimensionless(
-        cartpole_params=similar_params, learnable_params=learnable_params, N_horizon=5
+        cartpole_params=similar_params, learnable_params=learnable_params, N_horizon=5, dimensionless=dimensionless
     )
 
     # check the MPC cost and constraints
