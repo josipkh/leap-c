@@ -80,7 +80,7 @@ def get_similar_cartpole_params(
     # match the sampling time
     new_params.dt = reference_params.dt * np.sqrt(new_params.l / reference_params.l)
 
-    # match the discount factor (through the continuous discount rate r = -log(gamma)/dt)
+    # TODO: match the discount factor (through the continuous discount rate r = -log(gamma)/dt)
     new_params.gamma = np.power(
         reference_params.gamma, new_params.dt / reference_params.dt
     )

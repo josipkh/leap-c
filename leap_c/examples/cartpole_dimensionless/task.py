@@ -9,6 +9,7 @@ from leap_c.examples.cartpole_dimensionless.env import CartpoleSwingupEnvDimensi
 from leap_c.examples.cartpole_dimensionless.mpc import CartpoleMpcDimensionless
 from leap_c.examples.cartpole_dimensionless.config import CartPoleParams
 
+
 @register_task("cartpole_swingup_dimensionless")
 class CartpoleSwingupDimensionless(Task):
     """Swing-up task for the pendulum on a cart system.
@@ -45,7 +46,7 @@ class CartpoleSwingupDimensionless(Task):
     ) -> MpcInput:
         if param_nn is None:
             raise ValueError("Parameter tensor is required for MPC task.")
-
+        
         mpc_param = MpcParameter(p_global=param_nn)  # type: ignore
 
         return MpcInput(x0=obs, parameters=mpc_param)

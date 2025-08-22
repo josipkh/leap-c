@@ -26,8 +26,8 @@ def print_inputs(
     print(f"cfg.seed:    \t{cfg.seed}")
 
     # Report on the configuration
-    print("\nConfiguration:")
-    print(cfg_as_python(cfg))
+    # print("\nConfiguration:")
+    # print(cfg_as_python(cfg))
     print("\n")
 
 
