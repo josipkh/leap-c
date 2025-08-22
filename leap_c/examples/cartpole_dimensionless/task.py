@@ -18,6 +18,7 @@ class CartpoleSwingupDimensionless(Task):
 
     def __init__(self, mpc_params: CartPoleParams, env_params: CartPoleParams, dimensionless: bool):
         self.env_params = env_params
+        self.mpc_params = mpc_params
         self.dimensionless = dimensionless
         learnable_params = ["xref2"]
         N_horizon = 5  # Number of steps in the MPC horizon
@@ -32,7 +33,11 @@ class CartpoleSwingupDimensionless(Task):
         super().__init__(mpc_layer)
 
     def create_env(self, train: bool) -> gym.Env:
-        return CartpoleSwingupEnvDimensionless(cartpole_params=self.env_params, dimensionless=self.dimensionless)
+        return CartpoleSwingupEnvDimensionless(
+            cartpole_params=self.env_params,
+            mpc_cartpole_params=self.mpc_params,
+            dimensionless=self.dimensionless
+        )
 
     @property
     def param_space(self) -> gym.spaces.Box | None:

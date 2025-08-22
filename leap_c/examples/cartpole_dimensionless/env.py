@@ -62,13 +62,15 @@ class CartpoleSwingupEnvDimensionless(gym.Env):
         cartpole_params: CartPoleParams | None = None,
         use_acados_integrator: bool = False,
         dimensionless: bool = True,
+        mpc_cartpole_params: CartPoleParams | None = None,
     ):
-        if cartpole_params is None:
-            raise ValueError("No parameters provided in the env.")
+        if cartpole_params is None or mpc_cartpole_params is None:
+            raise ValueError("Cartpole parameters not provided in the env.")
 
         if dimensionless:
+            # use agent instead of env parameters
             self.Ms, self.Ma, self.Mt = get_transformation_matrices(
-                cartpole_params
+                mpc_cartpole_params
             )  # s(physical) = Ms * s(dimensionless)
             self.Ms_inv = np.linalg.inv(self.Ms)
             self.Ma_inv = np.linalg.inv(self.Ma)
@@ -204,6 +206,7 @@ class CartpoleSwingupEnvDimensionless(gym.Env):
         self.s[1] = theta
 
         # calculate the reward
+        # (if dimensionless, should be scaled with the env parameters)
         r = abs(np.pi - (abs(theta))) / (10 * np.pi)  # Reward for swingup; Max: 0.1
 
         # check for termination
@@ -434,13 +437,21 @@ if __name__ == "__main__":
 
     # create envs for the default and similar parameters
     params_ref = get_default_cartpole_params()
-    env_ref = CartpoleSwingupEnvDimensionless(cartpole_params=params_ref, dimensionless=dimensionless)
+    env_ref = CartpoleSwingupEnvDimensionless(
+        cartpole_params=params_ref,
+        dimensionless=dimensionless,
+        mpc_cartpole_params=params_ref
+    )
 
     pole_length = 5.0  # [m]
     params_sim = get_similar_cartpole_params(
         reference_params=params_ref, pole_length=pole_length
     )
-    env_sim = CartpoleSwingupEnvDimensionless(cartpole_params=params_sim, dimensionless=dimensionless)
+    env_sim = CartpoleSwingupEnvDimensionless(
+        cartpole_params=params_sim,
+        dimensionless=dimensionless,
+        mpc_cartpole_params=params_sim
+    )
     # env_sim = CartpoleSwingupEnvDimensionless(cartpole_params=params_ref, use_acados_integrator=True)
 
     assert env_ref.action_space == env_sim.action_space
@@ -500,6 +511,7 @@ if __name__ == "__main__":
     plt.subplots_adjust(left=None, bottom=None, right=None, top=None, hspace=0.4)
     fig.align_ylabels(ax)
     plt.show(block=False)
+    print("ok")
     print("Press ENTER to close the plot")
     input()
     plt.close()
@@ -507,4 +519,3 @@ if __name__ == "__main__":
     env_ref.close()
     env_sim.close()
 
-    print("ok")
