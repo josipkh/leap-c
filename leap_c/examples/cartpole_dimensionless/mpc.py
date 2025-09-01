@@ -58,13 +58,10 @@ class CartpoleMpcDimensionless(Mpc):
 
     def __init__(
         self,
-        cartpole_params: CartPoleParams | None = None,
-        learnable_params: list[str] | None = None,
-        N_horizon: int = 20,
-        n_batch: int = 64,
-        exact_hess_dyn: bool = True,
-        cost_type: str = "NONLINEAR_LS",
-        dimensionless: bool = True,
+        cartpole_params: CartPoleParams | None,
+        learnable_params: list[str] | None,
+        N_horizon: int,
+        dimensionless: bool,
     ):
         """
         Args:
@@ -84,7 +81,10 @@ class CartpoleMpcDimensionless(Mpc):
             cost_type: The type of cost to use, either "EXTERNAL" or "NONLINEAR_LS".
         """
         params = deepcopy(cartpole_params)  # to prevent any modification to the input
-
+        n_batch = 64
+        exact_hess_dyn = True
+        cost_type = "NONLINEAR_LS"
+        
         if dimensionless:
             Mx, Mu, Mt = get_transformation_matrices(
                 params

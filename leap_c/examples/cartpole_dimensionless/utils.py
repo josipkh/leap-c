@@ -195,7 +195,15 @@ def plot_results(main_folder, plot_std=False):
             print(f"Warning: No valid seed logs found for {exp}")
 
     # Plotting
-    plt.figure(figsize=(10, 6))
+    try:
+        plt.figure(figsize=(10, 6))
+    except Exception as e:
+    # switch to a headless backend (https://stackoverflow.com/questions/4706451/how-to-save-a-figure-remotely-with-pylab)
+        import matplotlib
+        matplotlib.use("Agg")
+        import matplotlib.pyplot as plt
+        plt.figure(figsize=(10, 6))
+
     for exp_name, data in experiment_results.items():
         if metric in data['mean'].columns:
             steps = data['mean'].index
