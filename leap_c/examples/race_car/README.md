@@ -1,0 +1,3 @@
+This example is based on the publication: *NMPC for Racing Using a Singularity-Free Path-Parametric Model with Obstacle Avoidance - Daniel Kloeser, Tobias Schoels, Tommaso Sartor, Andrea Zanelli, Gianluca Frison, Moritz Diehl. Proceedings of the 21th IFAC World Congress, Berlin, Germany - July 2020* ([link](https://www.sciencedirect.com/science/article/pii/S2405896320317845)).
+
+The goal is to drive around the track in minimum time, with a progress-maximizing OCP reformulation in the MPC. Starting from an MPC cost which favors sticking to the centerline (similar to a careful driver when on a new track), RL should adapt the weights such that a time-optimal behaviour is achieved.

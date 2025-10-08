@@ -1,0 +1,200 @@
+"""Main script to run the controller with default parameters."""
+
+from argparse import ArgumentParser
+from dataclasses import asdict, dataclass, field
+from pathlib import Path
+from typing import Any, Generator
+
+import gymnasium as gym
+import numpy as np
+
+from leap_c.controller import ParameterizedController
+from leap_c.examples import ExampleControllerName, ExampleEnvName, create_controller, create_env
+from leap_c.run import default_controller_code_path, default_name, default_output_path, init_run
+from leap_c.torch.rl.buffer import ReplayBuffer
+from leap_c.trainer import Trainer, TrainerConfig
+
+
+@dataclass
+class ControllerTrainerConfig(TrainerConfig):
+    """Configuration for running controller without training."""
+
+    # Override defaults to skip training
+    train_steps: int = 1  # No training
+    val_freq: int = 1  # Validate immediately
+
+
+@dataclass
+class RunControllerConfig:
+    """Configuration for running controller experiments.
+
+    Attributes:
+        env: The environment name.
+        controller: The controller name.
+        trainer: The trainer configuration.
+    """
+
+    env: ExampleEnvName = "race_car"
+    controller: ExampleControllerName = "race_car"
+    trainer: ControllerTrainerConfig = field(default_factory=ControllerTrainerConfig)
+
+
+class ControllerTrainer(Trainer[ControllerTrainerConfig]):
+    """A trainer that just runs the controller with default parameters, without any training.
+
+    Attributes:
+        controller: The parameterized controller to use.
+        collate_fn: The function used to collate observations and actions.
+    """
+
+    def __init__(
+        self,
+        cfg: ControllerTrainerConfig,
+        val_env: gym.Env,
+        output_path: str | Path,
+        device: str,
+        controller: ParameterizedController,
+    ):
+        """
+
+        Args:
+            cfg: The trainer configuration.
+            val_env: The validation environment.
+            output_path: The path to save outputs to.
+            device: The device to use.
+            controller: The parameterized controller to use.
+        """
+        super().__init__(cfg, val_env, output_path, device)
+        self.controller = controller
+
+        buffer = ReplayBuffer(1, device, collate_fn_map=controller.collate_fn_map)
+        self.collate_fn = buffer.collate
+
+    def train_loop(self) -> Generator[int, None, None]:
+        """No training - just return immediately."""
+        while True:
+            yield 1
+
+    def act(
+        self, obs, deterministic: bool = False, state=None
+    ) -> tuple[np.ndarray, Any, dict[str, float]]:
+        """Use the controller with default parameters."""
+        obs_batched = self.collate_fn([obs])
+
+        default_param = self.controller.default_param(obs)
+
+        param_batched = self.collate_fn([default_param])
+
+        ctx, action = self.controller(obs_batched, param_batched, ctx=state)
+
+        action = action.cpu().numpy()[0]
+
+        return action, ctx, {}
+
+
+def create_cfg(env: str, controller: str, seed: int) -> RunControllerConfig:
+    """Return the default configuration for running controller experiments."""
+    cfg = RunControllerConfig()
+    cfg.env = env
+    cfg.controller = controller if controller is not None else env
+
+    # ---- Section: cfg.trainer ----
+    cfg.trainer.seed = seed
+    cfg.trainer.train_steps = 1  # No training
+    cfg.trainer.train_start = 0
+    cfg.trainer.val_freq = 1  # Validate immediately
+    cfg.trainer.val_num_rollouts = 20
+    cfg.trainer.val_deterministic = True
+    cfg.trainer.val_num_render_rollouts = 0
+    cfg.trainer.val_render_mode = "rgb_array"
+    cfg.trainer.val_report_score = "cum"
+    cfg.trainer.ckpt_modus = "none"  # No checkpoints needed
+
+    # ---- Section: cfg.trainer.log ----
+    cfg.trainer.log.verbose = True
+    cfg.trainer.log.interval = 1_000
+    cfg.trainer.log.window = 10_000
+    cfg.trainer.log.csv_logger = True
+    cfg.trainer.log.tensorboard_logger = True
+    cfg.trainer.log.wandb_logger = False
+    cfg.trainer.log.wandb_init_kwargs = {}
+
+    return cfg
+
+
+def run_controller(
+    cfg: RunControllerConfig,
+    output_path: str | Path,
+    device: str = "cpu",
+    reuse_code_dir: Path | None = None,
+) -> float:
+    """
+    Args:
+        cfg: The configuration for running the controller.
+        output_path: The path to save outputs to.
+        device: The device to use.
+        reuse_code_dir: The directory to reuse compiled code from, if any.
+    """
+    trainer = ControllerTrainer(
+        val_env=create_env(cfg.env, render_mode="rgb_array"),
+        controller=create_controller(cfg.controller, reuse_code_base_dir=reuse_code_dir),
+        output_path=output_path,
+        device=device,
+        cfg=cfg.trainer,
+    )
+    init_run(trainer, cfg, output_path)
+
+    print(f"Running controller '{cfg.controller}' on environment '{cfg.env}'")
+
+    final_score = trainer.run()
+    print(f"Final validation score: {final_score}")
+
+    return final_score
+
+
+if __name__ == "__main__":
+    parser = ArgumentParser()
+    parser.add_argument("--output_path", type=Path, default=None)
+    parser.add_argument("--device", type=str, default="cpu")
+    parser.add_argument("--seed", type=int, default=0)
+    parser.add_argument("--env", type=str, default="race_car")
+    parser.add_argument("--controller", type=str, default=None)
+    parser.add_argument(
+        "-r",
+        "--reuse_code",
+        action="store_true",
+        help="Reuse compiled code. The first time this is run, it will compile the code.",
+    )
+    parser.add_argument("--reuse_code_dir", type=Path, default=None)
+    parser.add_argument("--use-wandb", action="store_true")
+    parser.add_argument("--wandb-entity", type=str, default=None)
+    parser.add_argument("--wandb-project", type=str, default="leap-c")
+    args = parser.parse_args()
+
+    if args.output_path is None:
+        output_path = default_output_path(
+            seed=args.seed, tags=["controller", args.env, args.controller]
+        )
+    else:
+        output_path = args.output_path
+
+    cfg = create_cfg(args.env, args.controller, args.seed)
+
+    if args.use_wandb:
+        config_dict = asdict(cfg)
+        cfg.trainer.log.wandb_logger = True
+        cfg.trainer.log.wandb_init_kwargs = {
+            "entity": args.wandb_entity,
+            "project": args.wandb_project,
+            "name": default_name(args.seed, tags=["controller", args.env, args.controller]),
+            "config": config_dict,
+        }
+
+    if args.reuse_code and args.reuse_code_dir is None:
+        reuse_code_dir = default_controller_code_path() if args.reuse_code else None
+    elif args.reuse_code_dir is not None:
+        reuse_code_dir = args.reuse_code_dir
+    else:
+        reuse_code_dir = None
+
+    run_controller(cfg, output_path, device=args.device, reuse_code_dir=reuse_code_dir)
