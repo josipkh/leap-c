@@ -713,6 +713,7 @@ class Mpc(ABC):
         ocp = self.ocp
         ocp.model.name += "_batch"  # type:ignore
 
+        print("Setting up the forward solver...")
         batch_solver = self.afm_batch.setup_acados_ocp_batch_solver(
             ocp, self.n_batch_max, self._num_threads_in_batch_methods
         )
@@ -730,6 +731,7 @@ class Mpc(ABC):
         ocp = self.ocp_sensitivity
         ocp.model.name += "_batch"  # type:ignore
 
+        print("Setting up the backward solver...")
         batch_solver = self.afm_sens_batch.setup_acados_ocp_batch_solver(
             ocp, self.n_batch_max, self._num_threads_in_batch_methods
         )
