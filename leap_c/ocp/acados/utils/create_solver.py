@@ -118,10 +118,6 @@ def create_forward_backward_batch_solvers(
     # check if we can use the forward solver for the backward pass.
     need_backward_solver = _check_need_sensitivity_solver(ocp)
 
-    if need_backward_solver:
-        ocp.solver_options.with_solution_sens_wrt_params = True
-        ocp.solver_options.with_value_sens_wrt_params = True
-
     if export_directory is not None:
         export_directory = Path(export_directory)
         export_dir_fwd = export_directory / "forward_solver"
@@ -201,8 +197,11 @@ def make_ocp_sensitivity_compatible(sensitivity_ocp: AcadosOcp):
     opts.exact_hess_dyn = True
     opts.fixed_hess = 0
     opts.levenberg_marquardt = 0.0
-    opts.with_solution_sens_wrt_params = True
-    opts.with_value_sens_wrt_params = True
+
+    opts.qpscaling_scale_constraints = "NO_CONSTRAINT_SCALING"
+    opts.qpscaling_scale_objective = "NO_OBJECTIVE_SCALING"
+    sensitivity_ocp.code_gen_options.with_solution_sens_wrt_params = True
+    sensitivity_ocp.code_gen_options.with_value_sens_wrt_params = True
 
     mdl = sensitivity_ocp.model
     mdl.cost_expr_ext_cost_custom_hess_0 = None
