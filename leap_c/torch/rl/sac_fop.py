@@ -1,6 +1,7 @@
 """Provides a trainer for a SAC algorithm that uses a diff. MPC layer in the policy network."""
 
 from dataclasses import dataclass, field
+from datetime import datetime
 from math import prod
 from pathlib import Path
 from typing import Generator, Generic
@@ -139,6 +140,9 @@ class SacFopTrainer(Trainer[SacFopTrainerConfig, CtxType], Generic[CtxType]):
         policy_state = None
         obs = None
 
+        if self.cfg.log.verbose:
+            last_milestone = 0
+
         while True:
             if is_terminated or is_truncated:
                 obs, _ = seed_env(self.train_env, mk_seed(self.rng), {"mode": "train"})
@@ -181,6 +185,18 @@ class SacFopTrainer(Trainer[SacFopTrainerConfig, CtxType], Generic[CtxType]):
                 and len(self.buffer) >= self.cfg.batch_size
                 and self.state.step % self.cfg.update_freq == 0
             ):
+                if self.cfg.log.verbose:
+                    current_milestone = int(
+                        np.floor(self.state.step / self.cfg.log.progress_update_interval)
+                        * self.cfg.log.progress_update_interval
+                    )
+                    if current_milestone > last_milestone:
+                        print(
+                            f"Passed step {int(current_milestone)} at "
+                            f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+                        )
+                        last_milestone = current_milestone
+
                 # sample batch
                 o, a, r, o_prime, te, ps_sol = self.buffer.sample(self.cfg.batch_size)
 

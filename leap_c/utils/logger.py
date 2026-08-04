@@ -16,6 +16,7 @@ class LoggerConfig:
         verbose: If `True`, the logger will collect also verbose statistics.
         interval: The interval at which statistics will be logged (in steps).
         window: The moving window size for the smoothed statistics (in steps).
+        progress_update_interval: The interval for printing progress info to console (in steps).
         csv_logger: If `True`, the statistics will be logged to a CSV file.
         tensorboard_logger: If `True`, the statistics will be logged to TensorBoard.
         wandb_logger: If `True`, the statistics will be logged to Weights & Biases.
@@ -30,6 +31,7 @@ class LoggerConfig:
 
     interval: int = 1_000
     window: int = 10_000
+    progress_update_interval: int = 1_000
 
     csv_logger: bool = True
     tensorboard_logger: bool = True
