@@ -205,6 +205,8 @@ class SquashedGaussian(BoundedDistribution):
         if anchor is not None:
             # Convert anchor to tensor if it's a numpy array
             if not isinstance(anchor, torch.Tensor):
+                if not anchor.flags.writeable:
+                    anchor.setflags(write=True)
                 anchor = torch.as_tensor(anchor, dtype=mean.dtype, device=mean.device)
 
             # ensure anchor is within action space bounds
@@ -359,6 +361,8 @@ class ScaledBeta(BoundedDistribution):
         if anchor is not None:
             # convert anchor to tensor if it's a numpy array
             if not isinstance(anchor, torch.Tensor):
+                if not anchor.flags.writeable:
+                    anchor.setflags(write=True)
                 anchor = torch.as_tensor(anchor, dtype=alpha.dtype, device=alpha.device)
 
             # get current mode and translate from [0, 1] to [-inf, inf] logit space
@@ -499,6 +503,8 @@ class ModeConcentrationBeta(BoundedDistribution):
         if anchor is not None:
             # convert anchor to tensor if it's a numpy array
             if not isinstance(anchor, torch.Tensor):
+                if not anchor.flags.writeable:
+                    anchor.setflags(write=True)
                 anchor = torch.as_tensor(anchor, dtype=logit_mode.dtype, device=logit_mode.device)
 
             # ensure anchor is within action space bounds

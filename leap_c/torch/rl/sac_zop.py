@@ -178,18 +178,6 @@ class SacZopTrainer(Trainer[SacZopTrainerConfig, CtxType], Generic[CtxType]):
                 and len(self.buffer) >= self.cfg.batch_size
                 and self.state.step % self.cfg.update_freq == 0
             ):
-                if self.cfg.log.verbose:
-                    current_milestone = int(
-                        np.floor(self.state.step / self.cfg.log.progress_update_interval)
-                        * self.cfg.log.progress_update_interval
-                    )
-                    if current_milestone > last_milestone:
-                        print(
-                            f"Passed step {int(current_milestone)} at "
-                            f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
-                        )
-                        last_milestone = current_milestone
-
                 # sample batch
                 o, a, r, o_prime, te = self.buffer.sample(self.cfg.batch_size)
 
@@ -250,6 +238,18 @@ class SacZopTrainer(Trainer[SacZopTrainerConfig, CtxType], Generic[CtxType]):
                     "entropy": -log_p.mean().item(),
                 }
                 self.report_stats("loss", loss_stats, verbose=True)
+
+            if self.cfg.log.verbose:
+                current_milestone = int(
+                    np.floor(self.state.step / self.cfg.log.progress_update_interval)
+                    * self.cfg.log.progress_update_interval
+                )
+                if current_milestone > last_milestone:
+                    print(
+                        f"Passed step {int(current_milestone)} at "
+                        f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+                    )
+                    last_milestone = current_milestone
 
             yield 1, float(reward)
 
