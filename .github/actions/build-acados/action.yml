@@ -1,0 +1,24 @@
+name: "Build acados"
+description: "Builds acados from source."
+inputs:
+  acados-source-dir:
+    description: "Path to the acados source directory"
+    required: true
+runs:
+  using: "composite"
+  steps:
+    - name: Compile acados and Install Tera
+      working-directory: ${{ inputs.acados-source-dir }}
+      shell: bash
+      run: |
+        cmake -S . -B build -DACADOS_WITH_OPENMP=ON -DACADOS_NUM_THREADS=1
+        cmake --build build --target install -- -j"$(nproc)"
+        .github/linux/install_tera.sh
+
+    - name: Export Paths
+      working-directory: ${{github.workspace}}
+      shell: bash
+      run: |
+        echo "ACADOS_SOURCE_DIR=${{inputs.acados-source-dir}}" >> $GITHUB_ENV
+        echo "ACADOS_INSTALL_DIR=${{inputs.acados-source-dir}}" >> $GITHUB_ENV
+        echo "LD_LIBRARY_PATH=${{inputs.acados-source-dir}}/lib:$LD_LIBRARY_PATH" >> $GITHUB_ENV

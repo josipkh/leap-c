@@ -37,7 +37,7 @@ class Extractor(nn.Module, ABC):
 
 
 class ScalingExtractor(Extractor):
-    """An extractor that returns the input normalized to the range [0, 1], using min-max scaling."""
+    """An extractor that normalizes the input to the range [-1, 1] using min-max scaling."""
 
     def __init__(self, observation_space: gym.spaces.Box) -> None:
         """Initializes the extractor.
@@ -51,7 +51,7 @@ class ScalingExtractor(Extractor):
             raise ValueError("ScalingExtractor only supports 1D observations.")
 
     def forward(self, x):
-        """Returns the input normalized to the range [0, 1], using min-max scaling.
+        """Returns the input normalized to the range [-1, 1], using min-max scaling.
 
         Args:
             x: The input tensor.

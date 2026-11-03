@@ -12,13 +12,13 @@ def test_min_max_scaling():
     space = Box(low=0, high=3, shape=(3,))
 
     # Create a tensor to scale
-    x = torch.tensor([[1.5, 1.5, 1.5], [3.0, 3.0, 3.0]])
+    x = torch.tensor([[0.0, 1.5, 3.0], [3.0, 3.0, 3.0]])
 
     # Scale the tensor
     scaled_x = min_max_scaling(x, space)
 
     # Check the scaled values
-    assert (scaled_x[0] == 0.5).all()
+    assert (scaled_x[0] == torch.tensor([-1.0, 0.0, 1.0])).all()
     assert (scaled_x[1] == 1.0).all()
 
     # Check for error if low >= high or there is infinity
@@ -45,13 +45,13 @@ def test_min_max_scaling_straight_through():
     space = Box(low=0, high=3, shape=(3,))
 
     # Create a tensor to scale
-    x = torch.tensor([[1.5, 1.5, 1.5], [3.0, 3.0, 3.0]], requires_grad=True)
+    x = torch.tensor([[0.0, 1.5, 3.0], [3.0, 3.0, 3.0]], requires_grad=True)
 
     # Scale the tensor
     scaled_x = min_max_scaling(x, space, straight_through=True)
 
     # Check the scaled values
-    assert (scaled_x[0] == 0.5).all()
+    assert (scaled_x[0] == torch.tensor([-1.0, 0.0, 1.0])).all()
     assert (scaled_x[1] == 1.0).all()
 
     # Check the gradient
