@@ -9,7 +9,7 @@ class MinMaxStraightThroughFunction(autograd.Function):
         low = torch.tensor(space.low, dtype=x.dtype, device=x.device)
         high = torch.tensor(space.high, dtype=x.dtype, device=x.device)
 
-        return (x - low) / (high - low)
+        return 2.0 * (x - low) / (high - low) - 1.0
 
     @staticmethod
     def backward(ctx, grad_output: torch.Tensor) -> tuple:  # type: ignore
@@ -19,7 +19,7 @@ class MinMaxStraightThroughFunction(autograd.Function):
 def min_max_scaling(
     x: torch.Tensor, space: spaces.Box, straight_through: bool = False
 ) -> torch.Tensor:
-    """Normalize a tensor x to the range [0, 1] given a Box space.
+    """Normalize a tensor x to the range [-1, 1] given a Box space.
 
     Args:
         x: The tensor to normalize.
@@ -42,4 +42,4 @@ def min_max_scaling(
     if torch.isinf(low).any() or torch.isinf(high).any():
         raise ValueError("The low and high bounds must not be infinite.")
 
-    return (x - low) / (high - low)
+    return 2.0 * (x - low) / (high - low) - 1.0
