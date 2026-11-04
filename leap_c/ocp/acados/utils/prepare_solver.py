@@ -35,7 +35,7 @@ def prepare_batch_solver(
     _PREPARE_CACHE[batch_solver] = (ocp_iterate, solver_input)
 
     batch_size = solver_input.batch_size
-    ocp: AcadosOcp = batch_solver.ocp_solvers[0].acados_ocp  # type:ignore
+    ocp: AcadosOcp = batch_solver.ocp_solvers[0].ocp  # type:ignore
     N: int = ocp.solver_options.N_horizon  # type:ignore
 
     x0 = solver_input.x0

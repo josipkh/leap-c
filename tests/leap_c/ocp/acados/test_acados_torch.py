@@ -42,7 +42,7 @@ def test_file_management(diff_mpc: AcadosDiffMpcTorch, tol: float = 1e-5) -> Non
             - Reloading the solver modifies the `.so` files beyond the specified
                 tolerance.
     """
-    code_export_directory = Path(diff_mpc.diff_mpc_fun.ocp.code_gen_opts.code_export_directory)
+    code_export_directory = Path(diff_mpc.diff_mpc_fun.ocp.code_gen_options.code_export_directory)
     export_directory = code_export_directory.parent
 
     assert code_export_directory.exists(), "c_generated_code directory does not exist"
@@ -69,7 +69,7 @@ def test_file_management(diff_mpc: AcadosDiffMpcTorch, tol: float = 1e-5) -> Non
     AcadosDiffMpcTorch(
         ocp=diff_mpc.diff_mpc_fun.ocp,
         initializer=diff_mpc.diff_mpc_fun.initializer,
-        sensitivity_ocp=diff_mpc.diff_mpc_fun.backward_batch_solver.ocp_solvers[0].acados_ocp,  # type: ignore
+        sensitivity_ocp=diff_mpc.diff_mpc_fun.backward_batch_solver.ocp_solvers[0].ocp,  # type: ignore
         export_directory=export_directory,
     )
 

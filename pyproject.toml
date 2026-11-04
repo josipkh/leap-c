@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools >= 61.0"]
+requires = ["setuptools >= 77.0.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -23,7 +23,8 @@ maintainers = [
 ]
 description = "Learning Predictive Control"
 readme = "README.md"
-license = { file = "LICENSE.txt" }
+license = "BSD-2-Clause"
+license-files = ["LICENSE"]
 keywords = [
   "Reinforcement Learning",
   "Imitation Learning",
@@ -86,6 +87,12 @@ Repository = "https://github.com/leap-c/leap-c"
 
 [tool.pytest.ini_options]
 testpaths = "tests"
+filterwarnings = [
+  # acados emits these internally (e.g. in AcadosOcp.make_consistent); they are
+  # not actionable here. Warnings triggered from leap_c code are still reported.
+  "ignore:Call to deprecated function:DeprecationWarning:acados_template.*",
+  "ignore:CasADi version .* is not tested with acados yet:UserWarning:acados_template.*",
+]
 
 [tool.ruff]
 target-version = "py311"

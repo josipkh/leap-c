@@ -39,7 +39,7 @@ def create_batch_solver(
         add_delete_hook = False
         try_code_reuse = True
 
-    ocp.code_gen_opts.code_export_directory = str(export_directory / "c_generated_code")
+    ocp.code_gen_options.code_export_directory = str(export_directory / "c_generated_code")
     json_file = str(export_directory / "acados_ocp.json")
 
     if try_code_reuse:
@@ -141,7 +141,7 @@ def create_forward_backward_batch_solvers(
     if sensitivity_ocp is None:
         # NOTE: Use the ocp from an already compiled solver
         # to hopefully avoid problems with deepcopy
-        sensitivity_ocp = deepcopy(forward_batch_solver.ocp_solvers[0].acados_ocp)  # type:ignore
+        sensitivity_ocp = deepcopy(forward_batch_solver.ocp_solvers[0].ocp)  # type:ignore
         make_ocp_sensitivity_compatible(sensitivity_ocp)  # type:ignore
 
     sensitivity_ocp.model.name += "_sensitivity"  # type:ignore
@@ -173,7 +173,7 @@ def _set_discount_factor(
     ocp_solver: AcadosOcpSolver | AcadosOcpBatchSolver, discount_factor: float
 ) -> None:
     if isinstance(ocp_solver, AcadosOcpSolver):
-        for stage in range(ocp_solver.acados_ocp.solver_options.N_horizon + 1):  # type: ignore
+        for stage in range(ocp_solver.ocp.solver_options.N_horizon + 1):  # type: ignore
             ocp_solver.cost_set(stage, "scaling", discount_factor**stage)
     elif isinstance(ocp_solver, AcadosOcpBatchSolver):
         for ocp_solver in ocp_solver.ocp_solvers:

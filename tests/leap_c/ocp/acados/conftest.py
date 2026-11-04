@@ -140,8 +140,6 @@ def ocp_options(request: pytest.FixtureRequest) -> AcadosOcpOptions:
     ocp_options.hessian_approx = "EXACT" if request.param == "exact" else "GAUSS_NEWTON"
     ocp_options.qp_solver = "PARTIAL_CONDENSING_HPIPM"
     ocp_options.qp_solver_ric_alg = 1
-    ocp_options.with_value_sens_wrt_params = True
-    ocp_options.with_solution_sens_wrt_params = True
     ocp_options.with_batch_functionality = True
 
     ocp_options.tf = 2.0
@@ -394,6 +392,8 @@ def acados_test_ocp(
     ocp = AcadosOcp()
 
     ocp.solver_options = ocp_options
+    ocp.code_gen_options.with_value_sens_wrt_params = True
+    ocp.code_gen_options.with_solution_sens_wrt_params = True
 
     param_manager = AcadosParameterManager(
         parameters=nominal_params, N_horizon=ocp.solver_options.N_horizon
@@ -471,6 +471,8 @@ def acados_test_ocp_with_stagewise_varying_params(
     ocp = AcadosOcp()
 
     ocp.solver_options = ocp_options
+    ocp.code_gen_options.with_value_sens_wrt_params = True
+    ocp.code_gen_options.with_solution_sens_wrt_params = True
 
     param_manager = AcadosParameterManager(
         parameters=nominal_stagewise_params, N_horizon=ocp.solver_options.N_horizon

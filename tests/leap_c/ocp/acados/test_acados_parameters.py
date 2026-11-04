@@ -1128,9 +1128,7 @@ def test_diff_mpc_with_stagewise_params_equivalent_to_diff_mpc(
     }
 
     N_horizon = (
-        mpc["global"]
-        .diff_mpc_fun.forward_batch_solver.ocp_solvers[0]
-        .acados_ocp.solver_options.N_horizon
+        mpc["global"].diff_mpc_fun.forward_batch_solver.ocp_solvers[0].ocp.solver_options.N_horizon
     )
 
     # Create a parameter manager for the stagewise varying parameters.
